@@ -1,3 +1,3 @@
 #!/bin/bash
 
-pip install dronekit pymavlink
+pip install dronekit pymavlink pytest
