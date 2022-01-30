@@ -1,5 +1,5 @@
 from typing import Tuple
-from camera import base as cambase
+from ..camera import base as cambase
 from dronekit import Vehicle
 
 class BaseRule:

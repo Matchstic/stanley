@@ -1,6 +1,6 @@
 from base import BaseRule
 
-class NoDetection(BaseRule):
+class NoDetectionRule(BaseRule):
     '''
     Rule to just sit in the same position without yaw, waiting for initial
     detection

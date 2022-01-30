@@ -7,7 +7,7 @@ class Direction(enum.Enum):
     LEFT  = 0
     RIGHT = 1
 
-class LostDetection(BaseRule):
+class SearchRule(BaseRule):
     '''
     Rule to yaw in the direction a detection was last seen in
     '''

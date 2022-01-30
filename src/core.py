@@ -1,12 +1,15 @@
+import time
+
 from enum import Enum
 from constants import ALTITUDE, HEARTBEAT_TIMEOUT, ALTITUDE_FUZZINESS
-from .rules import LostDetection, NoDetection, base
+
 from commands import clearROI, setPositionTarget
 from dronekit import Vehicle
-
 from camera import base as cambase
 
-import time
+from .rules.base import BaseRule
+from .rules.none import NoDetectionRule
+from .rules.search import SearchRule
 
 class ExecutionState(Enum):
     Init           = 0
@@ -23,7 +26,7 @@ class Core:
     vehicle: Vehicle = None
     camera: cambase.BaseCamera = None
     state: ExecutionState = ExecutionState.Init
-    rules: list[base.BaseRule] = []
+    rules: list[BaseRule] = []
 
     def __init__(self, vehicle: Vehicle, camera: cambase.BaseCamera):
         self.camera = camera
@@ -35,8 +38,8 @@ class Core:
         self.vehicle.add_attribute_listener('last_heartbeat', self.lastHeartbeatCallback)
 
         # Setup rules in heirarchy order
-        self.rules.append(LostDetection(self.vehicle, self.camera))
-        self.rules.append(NoDetection(self.vehicle, self.camera))
+        self.rules.append(SearchRule(self.vehicle, self.camera))
+        self.rules.append(NoDetectionRule(self.vehicle, self.camera))
 
         # Enter ready state
         self.state = ExecutionState.AwaitingArm
