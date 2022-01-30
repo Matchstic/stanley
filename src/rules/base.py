@@ -1,14 +1,16 @@
 from typing import Tuple
+from camera import base as cambase
+from dronekit import Vehicle
 
 class BaseRule:
 
-    vehicle = None
-    camera = None
+    vehicle: Vehicle = None
+    camera: cambase.BaseCamera = None
 
     _targetPosition = (0.0, 0.0)
     _targetYaw      = 0.0
 
-    def __init__(self, vehicle, camera):
+    def __init__(self, vehicle: Vehicle, camera: cambase.BaseCamera):
         self.vehicle = vehicle
         self.camera = camera
 

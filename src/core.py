@@ -4,6 +4,8 @@ from .rules import LostDetection, NoDetection, base
 from commands import clearROI, setPositionTarget
 from dronekit import Vehicle
 
+from camera import base as cambase
+
 import time
 
 class ExecutionState(Enum):
@@ -19,11 +21,11 @@ class ExecutionState(Enum):
 class Core:
 
     vehicle: Vehicle = None
-    camera = None
+    camera: cambase.BaseCamera = None
     state: ExecutionState = ExecutionState.Init
     rules: list[base.BaseRule] = []
 
-    def __init__(self, vehicle: Vehicle, camera):
+    def __init__(self, vehicle: Vehicle, camera: cambase.BaseCamera):
         self.camera = camera
         self.vehicle = vehicle
 
@@ -44,7 +46,7 @@ class Core:
     def modeCallback(self, _) -> None:
         print("Vehicle mode %s" % (self.vehicle.mode,))
 
-        if self.vehicle.mode is not "GUIDED" and self.state == ExecutionState.Running:
+        if self.vehicle.mode.name is not "GUIDED" and self.state == ExecutionState.Running:
             self.state = ExecutionState.PilotOnly
 
     def armedCallback(self, _) -> None:
@@ -61,7 +63,7 @@ class Core:
 
     def isReady(self) -> bool:
         return self.vehicle.armed and \
-                self.vehicle.mode.name == 'GUIDED' and \
+                self.vehicle.mode.name is 'GUIDED' and \
                 self.vehicle.location.global_relative_frame.alt > 0.5 # Indicates we are actually flying
 
     def isAltitudeOk(self) -> bool:
@@ -73,13 +75,12 @@ class Core:
     def armable(self) -> bool:
         return not self.vehicle.armed and \
                 self.vehicle.is_armable and \
-                self.vehicle.mode.name == 'GUIDED'
+                self.vehicle.mode.name is 'GUIDED'
 
     #### State machine
 
     def run(self) -> None:
         while not self.state is ExecutionState.Stop:
-            # Get camera data?
 
             if self.state is ExecutionState.Init:
                 # Do nothing during setup.
@@ -87,6 +88,7 @@ class Core:
             elif self.state is ExecutionState.AwaitingArm:
 
                 if self.armable():
+                    time.sleep(5) # safety delay
                     self.state = ExecutionState.Takeoff
 
             elif self.state is ExecutionState.Takeoff:
@@ -96,10 +98,10 @@ class Core:
 
                 # Confirm vehicle armed before attempting to take off
                 while not self.vehicle.armed:
-                    print("Waiting for arming...")
+                    print('Waiting for arming...')
                     time.sleep(1)
 
-                print("Take off to " + str(ALTITUDE))
+                print('Take off to ' + str(ALTITUDE) + 'm')
                 self.vehicle.simple_takeoff(ALTITUDE)
 
                 # Wait until the vehicle reaches altitude
@@ -116,6 +118,10 @@ class Core:
                     clearROI(self.vehicle)
 
                     self.state = ExecutionState.Running
+
+                # Shouldn't really happen, but here just in case!
+                elif self.vehicle.mode.name is not 'GUIDED':
+                    self.state = ExecutionState.PilotOnly
 
             elif self.state is ExecutionState.Running:
                 # Mode and armed callbacks handle exiting this state.
@@ -137,16 +143,13 @@ class Core:
 
             elif self.state is ExecutionState.ConnectionLoss:
                 # until reconnected, nothing we can do.
+                time.sleep(0.1)
                 pass
 
             elif self.state is ExecutionState.PilotOnly:
-
                 # Pilot is in control. Do nothing until we have disarmed again.
-                for rule in self.rules:
-                    rule.reset()
-
-                # And, clear any guided state remaining from a previous run
-                clearROI(self.vehicle)
+                time.sleep(0.1)
+                pass
 
     def stop(self) -> None:
         self.state = ExecutionState.Stop
