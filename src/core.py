@@ -15,8 +15,8 @@ class ExecutionState(Enum):
     AwaitingReady  = 3
     Running        = 4
     PilotOnly      = 5
-    Stop           = 6
-    ConnectionLoss = 7
+    ConnectionLoss = 6
+    Stop           = 7
 
 class Core:
 
