@@ -10,9 +10,9 @@ class ExecutionState(Enum):
     Init           = 0
     AwaitingArm    = 1
     Takeoff        = 2
-    ResetAltitude  = 3
-    AwaitingReady  = 4
-    Running        = 5
+    AwaitingReady  = 3
+    Running        = 4
+    PilotOnly      = 5
     Stop           = 6
     ConnectionLoss = 7
 
@@ -45,14 +45,7 @@ class Core:
         print("Vehicle mode %s" % (self.vehicle.mode,))
 
         if self.vehicle.mode is not "GUIDED" and self.state == ExecutionState.Running:
-            self.state = ExecutionState.AwaitingReady
-
-        elif self.vehicle.mode is "GUIDED" and \
-            self.isReady() and \
-            self.isConnected() and \
-            not self.isAltitudeOk():
-
-            self.state = ExecutionState.ResetAltitude
+            self.state = ExecutionState.PilotOnly
 
     def armedCallback(self, _) -> None:
         print("Vehicle armed %d" % (self.vehicle.armed,))
@@ -112,13 +105,6 @@ class Core:
                 # Wait until the vehicle reaches altitude
                 self.state = ExecutionState.AwaitingReady
 
-            elif self.state is ExecutionState.ResetAltitude:
-                # Sets altitude to relative position, remaining at (0,0)
-                setPositionTarget(self.vehicle, (0, 0), 0)
-
-                # Wait until the vehicle reaches altitude
-                self.state = ExecutionState.AwaitingReady
-
             elif self.state is ExecutionState.AwaitingReady:
 
                 if self.isReady() and self.isConnected() and self.isAltitudeOk():
@@ -152,6 +138,15 @@ class Core:
             elif self.state is ExecutionState.ConnectionLoss:
                 # until reconnected, nothing we can do.
                 pass
+
+            elif self.state is ExecutionState.PilotOnly:
+
+                # Pilot is in control. Do nothing until we have disarmed again.
+                for rule in self.rules:
+                    rule.reset()
+
+                # And, clear any guided state remaining from a previous run
+                clearROI(self.vehicle)
 
     def stop(self) -> None:
         self.state = ExecutionState.Stop
