@@ -1,6 +1,6 @@
-from base import BaseRule
+from .base import BaseRule
 import enum
-from ..constants import YAW_RATE
+from constants import YAW_RATE
 
 class Direction(enum.Enum):
     NONE  = -1

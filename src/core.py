@@ -5,11 +5,11 @@ from constants import ALTITUDE, HEARTBEAT_TIMEOUT, ALTITUDE_FUZZINESS
 
 from commands import clearROI, setPositionTarget
 from dronekit import Vehicle
-from camera import base as cambase
+from camera.base import BaseCamera
 
-from .rules.base import BaseRule
-from .rules.none import NoDetectionRule
-from .rules.search import SearchRule
+from rules.base import BaseRule
+from rules.none import NoDetectionRule
+from rules.search import SearchRule
 
 class ExecutionState(Enum):
     Init           = 0
@@ -24,11 +24,11 @@ class ExecutionState(Enum):
 class Core:
 
     vehicle: Vehicle = None
-    camera: cambase.BaseCamera = None
+    camera: BaseCamera = None
     state: ExecutionState = ExecutionState.Init
     rules: list[BaseRule] = []
 
-    def __init__(self, vehicle: Vehicle, camera: cambase.BaseCamera):
+    def __init__(self, vehicle: Vehicle, camera: BaseCamera):
         self.camera = camera
         self.vehicle = vehicle
 
