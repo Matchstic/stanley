@@ -1,4 +1,6 @@
+from typing import Tuple
 from pymavlink import mavutil
+from dronekit import LocationGlobal, LocationGlobalRelative, Vehicle
 from constants import ALTITUDE, MINIMUM_DISTANCE
 from convert import get_location_metres
 import time
@@ -7,7 +9,7 @@ import math
 ROI_STATE = False
 LAST_YAW_UPDATE = 0
 
-def setYaw(vehicle, yawRate):
+def setYaw(vehicle: Vehicle, yawRate: float) -> None:
     global LAST_YAW_UPDATE
 
     # Skip first call if the last update was never
@@ -31,7 +33,7 @@ def setYaw(vehicle, yawRate):
 
     vehicle.send_mavlink(msg)
 
-def setROI(vehicle, position, clear = False):
+def setROI(vehicle: Vehicle, position: Tuple[float, float, float], clear = False) -> None:
     lat, lon, alt = position
 
     msg = vehicle.message_factory.command_long_encode(
@@ -46,10 +48,10 @@ def setROI(vehicle, position, clear = False):
 
     vehicle.send_mavlink(msg)
 
-def clearROI(vehicle):
+def clearROI(vehicle: Vehicle) -> None:
     setROI(vehicle, (0, 0, 0), True)
 
-def setPositionTarget(vehicle, position, relativeYawRate):
+def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeYawRate: float) -> None:
     global ROI_STATE
     global LAST_YAW_UPDATE
 
@@ -95,7 +97,7 @@ def setPositionTarget(vehicle, position, relativeYawRate):
 
     vehicle.send_mavlink(msg)
 
-def positionTarget(vehicle, position):
+def positionTarget(vehicle: Vehicle, position: Tuple[float, float]) -> (LocationGlobal or LocationGlobalRelative):
     '''Computes a new global position target that is
     equal to the target position'''
 

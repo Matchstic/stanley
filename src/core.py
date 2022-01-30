@@ -1,7 +1,8 @@
 from enum import Enum
-from constants import MIN_ALTITUDE, HEARTBEAT_TIMEOUT
-from .rules import LostDetection, NoDetection
+from constants import ALTITUDE, HEARTBEAT_TIMEOUT, ALTITUDE_FUZZINESS
+from .rules import LostDetection, NoDetection, base
 from commands import setPositionTarget, clearROI
+from dronekit import Vehicle
 
 class ExecutionState(Enum):
     Init          = 0
@@ -12,12 +13,12 @@ class ExecutionState(Enum):
 
 class Core:
 
-    vehicle = None
+    vehicle: Vehicle = None
     camera = None
-    state = ExecutionState.Init
-    rules = []
+    state: ExecutionState = ExecutionState.Init
+    rules: list[base.BaseRule] = []
 
-    def __init__(self, vehicle, camera):
+    def __init__(self, vehicle: Vehicle, camera):
         self.camera = camera
         self.vehicle = vehicle
 
@@ -35,36 +36,36 @@ class Core:
 
     #### Callbacks
 
-    def modeCallback(self, _):
+    def modeCallback(self, _) -> None:
         print("Vehicle mode %s" % (self.vehicle.mode,))
 
         if not self.isReady() and self.state != ExecutionState.Init:
             self.state = ExecutionState.ModeChanged
 
-    def armedCallback(self, _):
+    def armedCallback(self, _) -> None:
         print("Vehicle armed %d" % (self.vehicle.armed,))
 
         if not self.isReady() and self.state != ExecutionState.Init:
             self.state = ExecutionState.ModeChanged
 
-    def lastHeartbeatCallback(self, _):
+    def lastHeartbeatCallback(self, _) -> None:
         if not self.isConnected() and self.state != ExecutionState.Init:
             self.state = ExecutionState.ModeChanged
 
     #### Getters
 
-    def isReady(self):
+    def isReady(self) -> bool:
         return self.vehicle.armed and \
                 self.vehicle.mode.name == 'GUIDED' and \
-                self.vehicle.location.global_relative_frame.alt > MIN_ALTITUDE
+                self.vehicle.location.global_relative_frame.alt - ALTITUDE_FUZZINESS >= ALTITUDE
 
-    def isConnected(self):
+    def isConnected(self) -> bool:
         return self.vehicle.last_heartbeat < HEARTBEAT_TIMEOUT
 
     #### State machine
 
-    def run(self):
-        while not self.state == ExecutionState.Stop:
+    def run(self) -> None:
+        while not self.state is ExecutionState.Stop:
             # Get camera data?
 
             if self.state is ExecutionState.Init:
@@ -82,7 +83,7 @@ class Core:
                     rule.update()
 
                 # Get the highest active rule's output
-                state = ((0, 0), 0)
+                state = ((0.0, 0.0), 0.0)
                 for rule in self.rules:
                     if rule.isActive():
                         state = rule.getState()
@@ -103,7 +104,7 @@ class Core:
 
                 self.state = ExecutionState.AwaitingReady
 
-    def stop(self):
+    def stop(self) -> None:
         self.state = ExecutionState.Stop
 
         # Cleanup

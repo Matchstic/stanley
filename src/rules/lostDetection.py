@@ -25,9 +25,9 @@ class LostDetection(BaseRule):
 
         # Yaw in that saved direction
         if self.personDirection is Direction.NONE:
-            self._targetYaw = 0
+            self._targetYaw = 0.0
         else:
-            self._targetYaw = (0 - YAW_RATE) if self.personDirection is Direction.LEFT else YAW_RATE
+            self._targetYaw = float((0.0 - YAW_RATE) if self.personDirection is Direction.LEFT else YAW_RATE)
 
     def reset(self):
         super().reset()
