@@ -13,7 +13,7 @@ def setYaw(vehicle: Vehicle, yawRate: float) -> None:
     global LAST_YAW_UPDATE
 
     # Skip first call if the last update was never
-    if LAST_YAW_UPDATE is 0:
+    if LAST_YAW_UPDATE == 0:
         return
 
     now = time.time()

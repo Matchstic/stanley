@@ -49,7 +49,7 @@ class Core:
     def modeCallback(self, _) -> None:
         print("Vehicle mode %s" % (self.vehicle.mode,))
 
-        if self.vehicle.mode.name is not "GUIDED" and self.state == ExecutionState.Running:
+        if self.vehicle.mode.name != "GUIDED" and self.state == ExecutionState.Running:
             self.state = ExecutionState.PilotOnly
 
     def armedCallback(self, _) -> None:
@@ -66,7 +66,7 @@ class Core:
 
     def isReady(self) -> bool:
         return self.vehicle.armed and \
-                self.vehicle.mode.name is 'GUIDED' and \
+                self.vehicle.mode.name == 'GUIDED' and \
                 self.vehicle.location.global_relative_frame.alt > 0.5 # Indicates we are actually flying
 
     def isAltitudeOk(self) -> bool:
@@ -78,7 +78,7 @@ class Core:
     def armable(self) -> bool:
         return not self.vehicle.armed and \
                 self.vehicle.is_armable and \
-                self.vehicle.mode.name is 'GUIDED'
+                self.vehicle.mode.name == 'GUIDED'
 
     #### State machine
 
@@ -123,7 +123,7 @@ class Core:
                     self.state = ExecutionState.Running
 
                 # Shouldn't really happen, but here just in case!
-                elif self.vehicle.mode.name is not 'GUIDED':
+                elif self.vehicle.mode.name != 'GUIDED':
                     self.state = ExecutionState.PilotOnly
 
             elif self.state is ExecutionState.Running:
