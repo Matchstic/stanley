@@ -6,6 +6,6 @@ class NoDetection(BaseRule):
     detection
     '''
 
-    def active(self):
+    def isActive(self):
         return True
 

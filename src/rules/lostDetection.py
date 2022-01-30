@@ -15,7 +15,7 @@ class LostDetection(BaseRule):
     hasSeenPerson = False
     personDirection = Direction.NONE
 
-    def active(self):
+    def isActive(self):
         return self.hasSeenPerson
 
     def update(self):
@@ -24,7 +24,10 @@ class LostDetection(BaseRule):
         # TODO: If present, save "direction" and hasSeenPerson == True
 
         # Yaw in that saved direction
-        self._targetYaw = (0 - YAW_RATE) if self.personDirection is Direction.LEFT else YAW_RATE
+        if self.personDirection is Direction.NONE:
+            self._targetYaw = 0
+        else:
+            self._targetYaw = (0 - YAW_RATE) if self.personDirection is Direction.LEFT else YAW_RATE
 
     def reset(self):
         super().reset()

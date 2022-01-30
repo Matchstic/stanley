@@ -10,7 +10,7 @@ class BaseRule:
         self.vehicle = vehicle
         self.camera = camera
 
-    def active(self):
+    def isActive(self):
         return False
 
     def update(self):
