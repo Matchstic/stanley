@@ -19,9 +19,17 @@ class SearchRule(BaseRule):
         return self.hasSeenPerson
 
     def update(self):
-        # TODO: Get person detection
+        detection = self.camera.detection()
 
-        # TODO: If present, save "direction" and hasSeenPerson == True
+        if detection != None:
+            if detection.x < 0:
+                self.personDirection = Direction.LEFT
+            elif detection.x > 0:
+                self.personDirection = Direction.RIGHT
+            else:
+                self.personDirection = Direction.NONE
+
+            self.hasSeenPerson = True
 
         # Yaw in that saved direction
         if self.personDirection is Direction.NONE:

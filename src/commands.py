@@ -1,24 +1,23 @@
 from typing import Tuple
 from pymavlink import mavutil
-from dronekit import LocationGlobal, LocationGlobalRelative, Vehicle
+from dronekit import LocationGlobal, LocationGlobalRelative, Vehicle, VehicleMode
 from constants import ALTITUDE, MINIMUM_DISTANCE
 from convert import get_location_metres
 import time
 import math
 
-ROI_STATE = False
-LAST_YAW_UPDATE = 0
+LAST_UPDATE = 0
 
 def setYaw(vehicle: Vehicle, yawRate: float) -> None:
-    global LAST_YAW_UPDATE
+    global LAST_UPDATE
 
     # Skip first call if the last update was never
-    if LAST_YAW_UPDATE == 0:
+    if LAST_UPDATE == 0:
         return
 
     now = time.time()
 
-    timeDifference = now - LAST_YAW_UPDATE
+    timeDifference = now - LAST_UPDATE
     headingChange = yawRate * timeDifference
 
     msg = vehicle.message_factory.command_long_encode(
@@ -33,6 +32,40 @@ def setYaw(vehicle: Vehicle, yawRate: float) -> None:
 
     vehicle.send_mavlink(msg)
 
+def setLoiter(vehicle: Vehicle, yawRate: float) -> None:
+    global LAST_UPDATE
+
+    # Skip first call if the last update was never
+    if LAST_UPDATE == 0:
+        return
+
+    now = time.time()
+
+    timeDifference = now - LAST_UPDATE
+    headingChange = yawRate * timeDifference
+
+    # Manually compute the yaw angle
+    currentYaw = vehicle.heading
+    outputYaw = currentYaw + headingChange
+
+    if outputYaw > 360: outputYaw = outputYaw - 360
+    elif outputYaw < 0: outputYaw = outputYaw + 360
+
+    msg = vehicle.message_factory.command_long_encode(
+        0, 0,    # target system, target component
+        mavutil.mavlink.MAV_CMD_NAV_LOITER_UNLIM,
+        0, #confirmation
+        0,    # param 1, empty
+        0,    # param 2, yempty
+        0,    # param 3, radius around MISSION, in meters
+        outputYaw, # param 4, absolute yaw angle
+        0, # param 5, latitude
+        0, # param 6, longitude
+        0) # param 7, altitude
+
+    vehicle.send_mavlink(msg)
+
+'''@unused'''
 def setROI(vehicle: Vehicle, position: Tuple[float, float, float], clear = False) -> None:
     lat, lon, alt = position
 
@@ -48,55 +81,42 @@ def setROI(vehicle: Vehicle, position: Tuple[float, float, float], clear = False
 
     vehicle.send_mavlink(msg)
 
+'''@unused'''
 def clearROI(vehicle: Vehicle) -> None:
     setROI(vehicle, (0, 0, 0), True)
 
 def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeYawRate: float) -> None:
-    global ROI_STATE
-    global LAST_YAW_UPDATE
+    global LAST_UPDATE
 
     localNorth, localEast = position
-
-    roiPosition = positionTarget(vehicle, position)
-
-    # Set yaw either via ROI, or explicit rotation
-    if localNorth != 0 and \
-        localEast != 0:
-
-        ROI_STATE = True
-
-        # Handle yaw by setting ROI to the exact position
-        setROI(vehicle, roiPosition)
+    if localNorth == 0 and localEast == 0:
+        # Loiter in place
+        setLoiter(vehicle, relativeYawRate)
     else:
-        # Clear ROI state if set to freely control yaw
-        if ROI_STATE is True:
-            clearROI(vehicle)
-            ROI_STATE = False
+        if vehicle.mode.name != 'GUIDED':
+            vehicle.mode = VehicleMode("GUIDED")
 
-        setYaw(relativeYawRate)
+        setYaw(vehicle, relativeYawRate)
 
-    LAST_YAW_UPDATE = time.time()
+        # Find altitude target
+        currentAltitude = vehicle.location.global_relative_frame.alt
+        targetAltOffset = ALTITUDE - currentAltitude
 
-    # Ensure the localNorth (i.e., depth) is reduced by 2 meters to maintain a safe distance away
-    # This is allowed to go negative, to result in "backwards" navigation
-    localNorth -= float(MINIMUM_DISTANCE)
+        msg = vehicle.message_factory.set_position_target_local_ned_encode(
+            0,       # time_boot_ms (not used)
+            0, 0,    # target system, target component
+            mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED, # Use offset from current position
+            0b0000111111111000, # type_mask (only positions enabled)
+            localNorth, localEast, targetAltOffset,
+            0, 0, 0, # x, y, z velocity in m/s  (not used)
+            0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
+            0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink)
 
-    # Find altitude target
-    currentAltitude = vehicle.location.global_relative_frame.alt
-    targetAltOffset = ALTITUDE - currentAltitude
+        vehicle.send_mavlink(msg)
 
-    msg = vehicle.message_factory.set_position_target_local_ned_encode(
-        0,       # time_boot_ms (not used)
-        0, 0,    # target system, target component
-        mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED, # Use offset from current position
-        0b0000111111111000, # type_mask (only positions enabled)
-        localNorth, localEast, targetAltOffset,
-        0, 0, 0, # x, y, z velocity in m/s  (not used)
-        0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
-        0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink)
+    LAST_UPDATE = time.time()
 
-    vehicle.send_mavlink(msg)
-
+'''@unused'''
 def positionTarget(vehicle: Vehicle, position: Tuple[float, float]) -> (LocationGlobal or LocationGlobalRelative):
     '''Computes a new global position target that is
     equal to the target position'''

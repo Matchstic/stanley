@@ -1,4 +1,4 @@
-from base import BaseCamera
+from .base import BaseCamera
 
 class MockCamera(BaseCamera):
     ''' A mocked camera implementation for usage in testing

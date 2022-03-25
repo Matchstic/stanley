@@ -1,11 +1,14 @@
+'''
+A detection represents the location of a person, relative to the center of
+the camera's reference frame.
+'''
 class Detection():
 
-    absoluteX = 0
-    absoluteY = 0
-    absoluteZ = 0
+    x = 0
+    y = 0
+    z = 0
 
-    def toCameraSpace(self, camera):
-        ''' Converts detection to corresponding location in the
-        camera's reference frame.
-        '''
-        return (0, 0, 0)
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
