@@ -20,7 +20,7 @@ ACTIVE_THREADS = []
 @pytest.fixture
 def environment():
     [core, vehicle, camera, sitl] = prepareForTest()
-    yield [vehicle, camera, core]
+    yield (vehicle, camera, core)
     shutdownAfterTest(sitl, core)
 
 def core_thread(core):

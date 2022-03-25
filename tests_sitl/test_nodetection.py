@@ -3,7 +3,7 @@ from .utils import headingDiff, gpsDistance, Environment
 import time
 
 def test_drone_does_not_rotate(environment: Environment):
-    [vehicle] = environment
+    vehicle, _, _ = environment
 
     heading = vehicle.heading
 
@@ -15,7 +15,7 @@ def test_drone_does_not_rotate(environment: Environment):
     assert abs(difference) < 3
 
 def test_drone_does_not_drift(environment: Environment):
-    [vehicle] = environment
+    vehicle, _, _ = environment
 
     location1 = vehicle.location.global_frame
 
