@@ -4,7 +4,7 @@ class BaseCamera:
         pass
 
     def detections(self):
-        return None
+        return []
 
     def start(self):
         pass
