@@ -10,7 +10,7 @@ import threading
 
 THREAD_STOP = False
 
-def thread(callback, _pipeline):
+def thread(callback, _pipeline, outputFrames):
     with dai.Device(_pipeline) as device:
         # Output queues will be used to get the rgb frames and nn data from the outputs defined above
         previewQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
@@ -28,12 +28,16 @@ def thread(callback, _pipeline):
             inDet = detectionNNQueue.get()
             depth = depthQueue.get()
 
-            frame = inPreview.getCvFrame()
-            depthFrame = depth.getFrame() # depthFrame values are in millimeters
+            frame = None
+            depthFrame = None
 
-            depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
-            depthFrameColor = cv2.equalizeHist(depthFrameColor)
-            depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
+            if outputFrames:
+                frame = inPreview.getCvFrame()
+                depthFrame = depth.getFrame() # depthFrame values are in millimeters
+
+                depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
+                depthFrameColor = cv2.equalizeHist(depthFrameColor)
+                depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
 
             counter+=1
             current_time = time.monotonic()
@@ -43,7 +47,7 @@ def thread(callback, _pipeline):
                 startTime = current_time
 
             detections = inDet.detections
-            if len(detections) != 0:
+            if outputFrames and len(detections) != 0:
                 boundingBoxMapping = xoutBoundingBoxDepthMappingQueue.get()
                 roiDatas = boundingBoxMapping.getConfigData()
 
@@ -60,29 +64,36 @@ def thread(callback, _pipeline):
                     cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
 
             # If the frame is available, draw bounding boxes on it and show the frame
-            height = frame.shape[0]
-            width  = frame.shape[1]
+            height = 0
+            width = 0
+
+            if outputFrames:
+                height = frame.shape[0]
+                width  = frame.shape[1]
 
             personDetections = []
             for detection in detections:
                 if detection.label == 0:
                     personDetections.append(Detection(detection.spatialCoordinates.x, detection.spatialCoordinates.y, detection.spatialCoordinates.z, detection.confidence, fps))
 
-                    # Denormalize bounding box
-                    x1 = int(detection.xmin * width)
-                    x2 = int(detection.xmax * width)
-                    y1 = int(detection.ymin * height)
-                    y2 = int(detection.ymax * height)
+                    if outputFrames:
+                        # Denormalize bounding box
+                        x1 = int(detection.xmin * width)
+                        x2 = int(detection.xmax * width)
+                        y1 = int(detection.ymin * height)
+                        y2 = int(detection.ymax * height)
 
-                    cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                    cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                    cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                    cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
 
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
-            cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
-            callback(personDetections, frame)
+            if outputFrames:
+                cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
+
+            callback(personDetections, frame if outputFrames else None)
 
         previewQueue.close()
         detectionNNQueue.close()
@@ -164,7 +175,7 @@ class YoloCamera(BaseCamera):
         self._spatialDetectionNetwork.passthroughDepth.link(self._xoutDepth.input)
 
     def start(self):
-        self._thread = threading.Thread(target=thread, args=(self._callback, self._pipeline))
+        self._thread = threading.Thread(target=thread, args=(self._callback, self._pipeline, self._userCallback != None))
         self._thread.start()
 
     def stop(self):
@@ -175,7 +186,9 @@ class YoloCamera(BaseCamera):
 
     def _callback(self, detections, frame):
         self._detections = detections
-        self._userCallback(detections, frame)
+
+        if self._userCallback != None:
+            self._userCallback(detections, frame)
 
     def detections(self):
         return self._detections

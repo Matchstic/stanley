@@ -17,7 +17,7 @@ def callback(detections, frame):
     FRAME = frame
     HAS_FRAME = True
 
-camera = YoloCamera(callback)
+camera = YoloCamera(None)
 camera.start()
 
 while EXIT == False:
