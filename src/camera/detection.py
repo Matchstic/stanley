@@ -7,8 +7,12 @@ class Detection():
     x = 0
     y = 0
     z = 0
+    confidence = 0
+    fps = 0
 
-    def __init__(self, x, y, z):
+    def __init__(self, x, y, z, confidence, fps):
         self.x = x
         self.y = y
         self.z = z
+        self.confidence = confidence
+        self.fps = fps
