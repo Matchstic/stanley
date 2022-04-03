@@ -5,3 +5,7 @@ BACKOFF_DISTANCE   = 2    # meters away from person to trigger backoff rule
 HEARTBEAT_TIMEOUT  = 2    # seconds
 YAW_RATE           = 5    # degrees/s
 DETECTION_THRESH   = 0.65 # Threshold at which a person is considered 'detected'
+MOCK_FOV           = 70   # FOV for the mock camera in tests
+MOCK_Z_MAX         = 10   # Max distance in meters for a detection
+MOCK_FPS           = 25   # Mocked FPS value for detections
+RADIUS_OF_EARTH    = 6378100.0  # in meters (for mock camera)

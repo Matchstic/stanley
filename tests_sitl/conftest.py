@@ -48,7 +48,7 @@ def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL]:
     print('connecting to ' + connection_string)
 
     vehicle = connect(connection_string, wait_ready=True)
-    camera = MockCamera()
+    camera = MockCamera(vehicle)
 
     core = Core(vehicle, camera)
     thread = threading.Thread(target=core_thread, args=(core,))
