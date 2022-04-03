@@ -20,7 +20,7 @@ def interpolate(currentPoint, nextPoint, offsetSinceCurrent):
     deltaLon =  nextPoint.longitude - currentPoint.longtude
 
     latInter = (currentPoint.latitude + deltaLat) * percent
-    lonInter = (currentPoint.longtude + deltaLon)  * percent
+    lonInter = (currentPoint.longtude + deltaLon) * percent
 
     return GPXTrackPoint(latInter, lonInter)
 

@@ -21,7 +21,7 @@ ACTIVE_THREADS = []
 def environment():
     [core, vehicle, camera, sitl] = prepareForTest()
     yield (vehicle, camera, core)
-    shutdownAfterTest(sitl, core)
+    shutdownAfterTest(sitl, core, camera)
 
 def core_thread(core):
     print('running core thread...')
@@ -95,13 +95,14 @@ def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL]:
 
     return [core, vehicle, camera, sitl]
 
-def shutdownAfterTest(sitl, core):
+def shutdownAfterTest(sitl, core, camera):
     '''
     Clears SITL environment after a test
     '''
 
     print('shutdown called')
 
+    camera.stop()
     core.stop()
 
     if sitl != None:
