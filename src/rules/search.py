@@ -19,7 +19,7 @@ class SearchRule(BaseRule):
         return self.hasSeenPerson
 
     def update(self):
-        detection = self.camera.detection()
+        detection = self.camera.closestDetection()
 
         if detection != None:
             if detection.x < 0:

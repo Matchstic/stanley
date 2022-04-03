@@ -10,6 +10,8 @@ from camera.base import BaseCamera
 from rules.base import BaseRule
 from rules.none import NoDetectionRule
 from rules.search import SearchRule
+from rules.follow import FollowRule
+from rules.backoff import BackoffRule
 
 class ExecutionState(Enum):
     Init           = 0
@@ -40,6 +42,8 @@ class Core:
         self.vehicle.add_attribute_listener('last_heartbeat', self.lastHeartbeatCallback)
 
         # Setup rules in heirarchy order
+        self.rules.append(BackoffRule(self.vehicle, self.camera))
+        self.rules.append(FollowRule(self.vehicle, self.camera))
         self.rules.append(SearchRule(self.vehicle, self.camera))
         self.rules.append(NoDetectionRule(self.vehicle, self.camera))
 
@@ -149,11 +153,6 @@ class Core:
                     if rule.isActive():
                         state = rule.getState()
                         break
-
-                # TODO in relevant rule:
-                # Ensure the localNorth (i.e., depth) is reduced by 2 meters to maintain a safe distance away
-                # This is allowed to go negative, to result in "backwards" navigation
-                # position.z -= float(MINIMUM_DISTANCE)
 
                 # Apply local translation and yaw differential
                 position, yaw = state

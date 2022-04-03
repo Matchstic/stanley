@@ -11,8 +11,10 @@ class Detection():
     fps = 0
 
     def __init__(self, x, y, z, confidence, fps):
-        self.x = x
-        self.y = y
-        self.z = z
+        # NOTE: incoming parameters are all mm. We want to expose in meters
+
+        self.x = x / 1000.0
+        self.y = y / 1000.0
+        self.z = z / 1000.0
         self.confidence = confidence
         self.fps = fps

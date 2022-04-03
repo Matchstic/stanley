@@ -8,6 +8,8 @@ import time
 import cv2
 import threading
 
+from ..constants import DETECTION_THRESH
+
 THREAD_STOP = False
 
 def thread(callback, _pipeline, outputFrames):
@@ -148,7 +150,7 @@ class YoloCamera(BaseCamera):
         self._stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
 
         self._spatialDetectionNetwork.setBlobPath(BLOB_PATH)
-        self._spatialDetectionNetwork.setConfidenceThreshold(0.5)
+        self._spatialDetectionNetwork.setConfidenceThreshold(DETECTION_THRESH)
         self._spatialDetectionNetwork.input.setBlocking(False)
         self._spatialDetectionNetwork.setBoundingBoxScaleFactor(0.5)
         self._spatialDetectionNetwork.setDepthLowerThreshold(100)

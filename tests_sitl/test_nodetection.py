@@ -1,4 +1,3 @@
-
 from .utils import headingDiff, gpsDistance, Environment
 import time
 

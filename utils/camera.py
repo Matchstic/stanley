@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(0, './src/camera')
+import os.path
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 from src.camera.yolocam import YoloCamera
 import cv2
@@ -8,16 +10,19 @@ EXIT = False
 HAS_FRAME = False
 FRAME = None
 
+camera = None
+
 def callback(detections, frame):
     global EXIT
     global FRAME
     global HAS_FRAME
 
-    print(detections[0].z if len(detections) > 0 else 'no detection')
+    print(str(camera.closestDetection().z) + ', confidence: ' + \
+          str(camera.closestDetection().confidence) if len(detections) > 0 else 'no detection')
     FRAME = frame
     HAS_FRAME = True
 
-camera = YoloCamera(None)
+camera = YoloCamera(callback)
 camera.start()
 
 while EXIT == False:
