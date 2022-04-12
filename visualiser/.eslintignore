@@ -1,0 +1,8 @@
+node_modules
+.serverless
+.vscode
+.jest
+.dynamodb
+dist
+coverage
+*.config.js

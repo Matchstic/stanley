@@ -1,0 +1,97 @@
+/* px only values for web */
+:root {
+    --padding-h-tiny: 3px;
+    --padding-h-small: 5px;
+    --padding-h: 10px;
+    --padding-h-large: 15px;
+    --padding-v-tiny: 2px;
+    --padding-v-small: 4px;
+    --padding-v: 8px;
+    --padding-v-large: 12px;
+
+    --border-radius: 8px;
+    --border-radius-small: 6px;
+    --navigation-height: 56px;
+
+    --font-size-h1: 28px;
+    --font-size-h2: 22px;
+    --font-size-h3: 18px;
+    --font-size-h4: 15px;
+    --font-size-h5: 12px;
+    --font-size-p: 12px;
+    --font-size-tiny: 11px;
+
+    --line-height-h1: 32px;
+    --line-height-h2: 28px;
+    --line-height-h3: 22px;
+    --line-height-h4: 20px;
+    --line-height-h5: 16px;
+    --line-height-p: 15px;
+    --line-height-tiny: 13px;
+
+    --context-max-width: 2000px;
+    --content-inset: var(--padding-h);
+    --content-inset: max(var(--padding-h), constant(safe-area-inset-left));
+    --content-inset: max(var(--padding-h), env(safe-area-inset-left));
+}
+
+/* @media queries for web */
+
+@media only screen and (min-width: 760px) {
+    :root {
+        --padding-h-tiny: 4px;
+        --padding-h-small: 8px;
+        --padding-h: 16px;
+        --padding-h-large: 24px;
+        --padding-v-tiny: 3px;
+        --padding-v-small: 6px;
+        --padding-v: 12px;
+        --padding-v-large: 18px;
+
+        --font-size-h1: 32px;
+        --font-size-h2: 28px;
+        --font-size-h3: 22px;
+        --font-size-h4: 18px;
+        --font-size-h5: 16px;
+        --font-size-p: 16px;
+        --font-size-tiny: 14px;
+
+        --line-height-h1: 36px;
+        --line-height-h2: 32px;
+        --line-height-h3: 28px;
+        --line-height-h4: 22px;
+        --line-height-h5: 20px;
+        --line-height-p: 20px;
+        --line-height-tiny: 16px;
+
+        --border-radius: 10px;
+        --content-inset: 2vw;
+        --content-inset: max(2vw, constant(safe-area-inset-left));
+        --content-inset: max(2vw, env(safe-area-inset-left));
+    }
+}
+
+@media only screen and (min-width: 1280px) {
+    :root {
+        --padding-h-tiny: 4px;
+        --padding-h-small: 8px;
+        --padding-h: 16px;
+        --padding-h-large: 24px;
+        --padding-v-tiny: 3px;
+        --padding-v-small: 6px;
+        --padding-v: 12px;
+        --padding-v-large: 18px;
+
+        --content-inset: 5vw;
+        --content-inset: max(5vw, constant(safe-area-inset-left));
+        --content-inset: max(5vw, env(safe-area-inset-left));
+    }
+}
+
+@media only screen and (min-width: 2000px) {
+    :root {
+        --content-inset: calc(calc(100% - var(--context-max-width)) / 2);
+        --content-inset: max(calc(calc(100% - var(--context-max-width)) / 2), constant(safe-area-inset-left));
+        --content-inset: max(calc(calc(100% - var(--context-max-width)) / 2), env(safe-area-inset-left));
+    }
+}
