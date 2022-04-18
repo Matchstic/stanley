@@ -46,6 +46,7 @@ class UIConnection:
             await self.printMsg(message)
 
     async def printMsg(self, msg):
+        return
         print(msg)
 
     async def main(self):

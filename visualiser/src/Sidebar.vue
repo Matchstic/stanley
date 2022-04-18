@@ -2,11 +2,6 @@
   <div class="sidebar">
     <h2>Visualiser</h2>
 
-    <Modeswitch
-      :options="options"
-      default-key="e2e"
-    />
-
     <div class="sidebar-data">
       <div class="sidebar-datum large">
         {{ state }}
@@ -28,6 +23,11 @@
         <span>Heading</span>
       </div>
     </div>
+
+    <Modeswitch
+      :options="options"
+      default-key="e2e"
+    />
   </div>
 </template>
 
@@ -108,6 +108,11 @@ export default class Sidebar extends Vue {
   flex-wrap: wrap;
 
   width: 100%;
+
+  background: var(--card-color);
+  border-radius: var(--border-radius);
+  padding-bottom: var(--padding-v-large);
+  margin-bottom: var(--padding-v-large);
 
   .sidebar-datum {
     width: 33%;

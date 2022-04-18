@@ -158,6 +158,8 @@ class Core:
                 position, yaw = state
                 setPositionTarget(self.vehicle, position, yaw)
 
+                time.sleep(0.01)
+
             elif self.state is ExecutionState.ConnectionLoss:
                 # until reconnected, nothing we can do.
                 time.sleep(0.1)

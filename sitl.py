@@ -1,5 +1,5 @@
 from time import time
-from tests_sitl.utils import prepareForTest, shutdownAfterTest
+from tests_sitl.conftest import prepareForTest, shutdownAfterTest
 import time
 
 [core, vehicle, camera, sitl, ui] = prepareForTest(timeout=False)
