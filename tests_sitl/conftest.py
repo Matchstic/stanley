@@ -1,6 +1,7 @@
 import pytest
 import time
 import threading
+import json
 
 from typing import Tuple
 
@@ -14,19 +15,66 @@ sys.path.insert(0, './src')
 
 from core import Core, ExecutionState
 from camera.mock import MockCamera
+from .uiconnection import UIConnection
 
 ACTIVE_THREADS = []
 
 @pytest.fixture
 def environment():
-    [core, vehicle, camera, sitl] = prepareForTest()
+    [core, vehicle, camera, sitl, ui] = prepareForTest()
     yield (vehicle, camera, core)
-    shutdownAfterTest(sitl, core, camera)
+    shutdownAfterTest(sitl, core, camera, ui)
 
 def core_thread(core):
     print('running core thread...')
     core.run()
     print('stopped core thread')
+
+def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera):
+    print('running ui thread...')
+
+    while ui.active():
+        # generate json blob of data to send
+        vehicleGlobalFrame = vehicle.location.global_relative_frame
+
+        if vehicleGlobalFrame.lat == 0.0 and vehicleGlobalFrame.lon == 0.0:
+            time.sleep(0.1)
+            continue
+
+        message = {
+            "type": "update",
+            "vehicle": {
+                "heading": vehicle.heading,
+                "coordinates": {
+                    "latitude": vehicleGlobalFrame.lat,
+                    "longitude": vehicleGlobalFrame.lon,
+                },
+                "altitude": vehicleGlobalFrame.alt
+            },
+            "core": {
+                "state": core.state
+            }
+        }
+
+        detection = camera.closestDetection()
+        if detection != None:
+            message["person"] = {
+                "global": camera.mockedPosition,
+                "local": {
+                    "x": detection.x,
+                    "z": detection.z
+                }
+            }
+
+        ui.send(json.dumps(message))
+
+        time.sleep(0.1)
+
+    # On shutdown, send reset message
+    resetMessage = { "type": "reset" }
+    ui.send(json.dumps(resetMessage))
+
+    print('stopped ui thread')
 
 def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL]:
     '''
@@ -55,6 +103,12 @@ def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL]:
     thread.start()
 
     ACTIVE_THREADS.append(thread)
+
+    ui = UIConnection()
+    uithread = threading.Thread(target=ui_thread, args=(ui, core, vehicle, camera))
+    uithread.start()
+
+    ACTIVE_THREADS.append(uithread)
 
     print('init done')
 
@@ -93,9 +147,9 @@ def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL]:
 
         time.sleep(1)
 
-    return [core, vehicle, camera, sitl]
+    return [core, vehicle, camera, sitl, ui]
 
-def shutdownAfterTest(sitl, core, camera):
+def shutdownAfterTest(sitl, core: Core, camera: MockCamera, ui: UIConnection):
     '''
     Clears SITL environment after a test
     '''
@@ -104,6 +158,7 @@ def shutdownAfterTest(sitl, core, camera):
 
     camera.stop()
     core.stop()
+    ui.stop()
 
     if sitl != None:
         sitl.stop()

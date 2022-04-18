@@ -13,15 +13,15 @@ from rules.search import SearchRule
 from rules.follow import FollowRule
 from rules.backoff import BackoffRule
 
-class ExecutionState(Enum):
-    Init           = 0
-    AwaitingArm    = 1
-    Takeoff        = 2
-    AwaitingReady  = 3
-    Running        = 4
-    PilotOnly      = 5
-    ConnectionLoss = 6
-    Stop           = 7
+class ExecutionState(str, Enum):
+    Init           = "INIT"
+    AwaitingArm    = "AWAITING_ARM"
+    Takeoff        = "TAKEOFF"
+    AwaitingReady  = "AWAITING_READY"
+    Running        = "RUNNING"
+    PilotOnly      = "PILOT_ONLY"
+    ConnectionLoss = "CONNECTION_LOSS"
+    Stop           = "STOP"
 
 ALLOWED_MODES = ['GUIDED', 'LOITER']
 

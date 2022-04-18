@@ -1,6 +1,6 @@
 from .base import BaseCamera
 from .detection import Detection
-from ..constants import MOCK_FOV, RADIUS_OF_EARTH, MOCK_Z_MAX, MOCK_FPS
+from src.constants import MOCK_FOV, RADIUS_OF_EARTH, MOCK_Z_MAX, MOCK_FPS
 
 import gpxpy
 from gpxpy.gpx import GPXTrackPoint
@@ -70,6 +70,11 @@ class MockCamera(BaseCamera):
     vehicle   = None
     _detections = []
 
+    mockedPosition = {
+        "latitude": 0,
+        "longitude": 0
+    }
+
     def __init__(self, vehicle):
         self.vehicle = vehicle
 
@@ -93,10 +98,15 @@ class MockCamera(BaseCamera):
         drone.
         '''
 
+        self.mockedPosition = {
+            "latitude": latitude,
+            "longitude": longitude
+        }
+
         vehicleGlobalFrame = self.vehicle.location.global_relative_frame
         vehicleLatitude  = vehicleGlobalFrame.latitude
         vehicleLongitude = vehicleGlobalFrame.longitude
-        vehicleHeading   = self.vehicle.attitude.yaw
+        vehicleHeading   = self.vehicle.heading
 
         # Get normalised bearing
         newHeading = self.headingBetween(latitude, longitude, vehicleLatitude, vehicleLongitude)
@@ -135,9 +145,10 @@ class MockCamera(BaseCamera):
         global STOP
 
         STOP = True
-        self.gpxThread.join()
 
-        print('DEBUG :: Stopped GPX thread')
+        if self.gpxThread:
+            self.gpxThread.join()
+            print('DEBUG :: Stopped GPX thread')
 
         super().stop()
 

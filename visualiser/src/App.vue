@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <Sidebar />
+    <Sidebar
+      :core="core"
+      :vehicle="vehicle"
+      :connected="connected"
+    />
 
     <MglMap
       class="map"
@@ -53,16 +57,29 @@ export default class App extends Vue {
     person: null
   }
 
+  private core = {}
+  private vehicle = {}
+  private connected = false
+
   created() {
+    manager.onconnected = (data: boolean) => {
+      this.connected = data
+    }
+
     manager.onchange = (data: UpdateMessage) => {
-      this.position = data.coordinates
-      this.heading = data.heading
+      this.position = [data.vehicle.coordinates.longitude, data.vehicle.coordinates.latitude]
+      this.heading = data.vehicle.heading
+
+      this.core = data.core
+      this.vehicle = data.vehicle
 
       // TODO: handle person information
 
       // Update map trace
-      this.updateTrack(data.coordinates, 'drone')
-      this.updateTrack(data.person.global, 'person')
+      this.updateTrack(this.position, 'drone')
+
+      if (data.person)
+        this.updateTrack([data.person.global.longitude, data.person.global.latitude], 'person')
     }
 
     manager.onreset = () => {
@@ -70,8 +87,13 @@ export default class App extends Vue {
       this.heading = 0
 
       // Clear map state
-      this.map.removeSource('drone')
-      this.map.removeSource('person')
+      const clean = (name: string) => {
+        this.map.removeLayer(name)
+        this.map.removeSource(name)
+      }
+
+      clean('drone')
+      clean('person')
 
       this.prepareMap()
     }
