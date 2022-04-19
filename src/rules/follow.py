@@ -39,3 +39,6 @@ class FollowRule(BaseRule):
 
     def reset(self):
         super().reset()
+
+    def name(self) -> str:
+        return 'follow'

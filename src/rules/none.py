@@ -9,3 +9,5 @@ class NoDetectionRule(BaseRule):
     def isActive(self):
         return True
 
+    def name(self) -> str:
+        return 'none'

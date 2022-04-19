@@ -42,3 +42,6 @@ class SearchRule(BaseRule):
 
         self.hasSeenPerson = False
         self.personDirection = Direction.NONE
+
+    def name(self) -> str:
+        return 'search'

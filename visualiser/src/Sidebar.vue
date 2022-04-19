@@ -8,6 +8,11 @@
         <span>State</span>
       </div>
 
+      <div class="sidebar-datum large">
+        {{ rule }}
+        <span>Rule</span>
+      </div>
+
       <div class="sidebar-datum">
         {{ linkState }}
         <span>Link</span>
@@ -46,6 +51,7 @@ export default class Sidebar extends Vue {
   @Prop()
   public readonly core: {
     state: string
+    rule: string
   }
 
   @Prop()
@@ -86,6 +92,10 @@ export default class Sidebar extends Vue {
     return this.core?.state || 'UNKNOWN'
   }
 
+  get rule(): string {
+    return this.core?.rule || 'N/A'
+  }
+
   get linkState(): string {
     return this.connected ? 'TRUE' : 'FALSE'
   }
@@ -124,7 +134,7 @@ export default class Sidebar extends Vue {
     align-items: center;
 
     &.large {
-      width: 100%;
+      width: 50%;
     }
 
     span {

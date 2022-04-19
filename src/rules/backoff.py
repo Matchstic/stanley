@@ -19,3 +19,6 @@ class BackoffRule(BaseRule):
         zDistance = detection.z
 
         self._targetPosition = (zDistance - BACKOFF_DISTANCE, xDistance)
+
+    def name(self) -> str:
+        return 'backoff'

@@ -21,6 +21,14 @@
         :coordinate="position"
         :bearing="heading"
       />
+
+      <MglMarker :coordinates="personPosition">
+        <img
+          slot="marker"
+          class="person-marker"
+          src="@/icons/person.png"
+        >
+      </MglMarker>
     </MglMap>
   </div>
 </template>
@@ -30,16 +38,19 @@ import { Component, Vue } from 'vue-property-decorator'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Mapbox from "mapbox-gl"
-import { MglMap } from "vue-mapbox"
+import { MglMap, MglMarker } from "vue-mapbox"
 
 import DroneMarker from './DroneMarker.vue'
 import Sidebar from './Sidebar.vue'
 
 import manager, { UpdateMessage } from './lib/manager'
 
+import { ResponsiveGamepad } from 'responsive-gamepad'
+
 @Component({
   components: {
     MglMap,
+    MglMarker,
     DroneMarker,
     Sidebar
   }
@@ -49,6 +60,7 @@ export default class App extends Vue {
   // Longitude, latitude
   private position: [number, number] = [149.165230, -35.363261]
   private heading = 0
+  private personPosition: [number, number] = [149.165230, -35.363203]
 
   private map = null
 
@@ -60,6 +72,7 @@ export default class App extends Vue {
   private core = {}
   private vehicle = {}
   private connected = false
+  private inputLoop = null
 
   created() {
     manager.onconnected = (data: boolean) => {
@@ -84,6 +97,7 @@ export default class App extends Vue {
 
     manager.onreset = () => {
       this.position = [149.165230, -35.363261]
+      this.personPosition = [149.165230, -35.363203]
       this.heading = 0
 
       // Clear map state
@@ -97,6 +111,59 @@ export default class App extends Vue {
 
       this.prepareMap()
     }
+
+    ResponsiveGamepad.enable()
+    this.startInputTracking()
+  }
+
+  private startInputTracking() {
+    const INTERVAL = 100 // ms
+    const SPEED = 1.5 // m/s
+    const MOVE_DISTANCE = SPEED * (INTERVAL / 1000)
+    const EARTH = 6378137
+
+    this.inputLoop = setInterval(() => {
+      if (!this.connected)
+        return
+
+      const { DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } = ResponsiveGamepad.getState()
+      const [startLongitude, startLatitude] = this.personPosition
+
+      let north = 0
+      let east = 0
+
+      if (DPAD_UP && !DPAD_DOWN) {
+        // Upwards
+        north = MOVE_DISTANCE
+      } else if (!DPAD_UP && DPAD_DOWN) {
+        // Downwards
+        north = -MOVE_DISTANCE
+      }
+
+      if (DPAD_LEFT && !DPAD_RIGHT) {
+        // left
+        east = -MOVE_DISTANCE
+      } else if (!DPAD_LEFT && DPAD_RIGHT) {
+        // right
+        east = MOVE_DISTANCE
+      }
+
+      // Coordinate offsets in radians
+      const dLat = north / EARTH
+      const dLon = east / (EARTH * Math.cos(Math.PI * startLatitude / 180))
+
+      // OffsetPosition, decimal degrees
+      const latOffset = startLatitude + dLat * (180 / Math.PI)
+      const lonOffset = startLongitude + dLon * (180 / Math.PI)
+
+      this.personPosition = [lonOffset, latOffset]
+
+      manager.send({
+        type: 'control',
+        latitude: latOffset,
+        longitude: lonOffset
+      })
+    }, INTERVAL)
   }
 
   private onMapLoaded(event) {
@@ -205,6 +272,13 @@ export default class App extends Vue {
   .sidebar {
     flex: 0 0 350px;
   }
+}
+
+.person-marker {
+  display: inline-block;
+  transform-origin: center;
+  width: 30px;
+  height: 30px;
 }
 
 </style>

@@ -104,8 +104,8 @@ class MockCamera(BaseCamera):
         }
 
         vehicleGlobalFrame = self.vehicle.location.global_relative_frame
-        vehicleLatitude  = vehicleGlobalFrame.latitude
-        vehicleLongitude = vehicleGlobalFrame.longitude
+        vehicleLatitude  = vehicleGlobalFrame.lat
+        vehicleLongitude = vehicleGlobalFrame.lon
         vehicleHeading   = self.vehicle.heading
 
         # Get normalised bearing
@@ -114,14 +114,15 @@ class MockCamera(BaseCamera):
         angle = abs(headingDiff)
         isLeftward = headingDiff < 0
 
-        if angle >= MOCK_FOV / 2:
+        '''if angle >= MOCK_FOV / 2:
             # Outside the vehicle's FOV, not a detection
             self._detections = []
             print('DEBUG :: Outside FOV, no detections')
-            return
+            return'''
 
         # Get distance between positions
         distance = self.distanceBetween(latitude, longitude, vehicleLatitude, vehicleLongitude)
+        print(distance, angle)
 
         if distance >= MOCK_Z_MAX:
             # Too far away to be counted as a detection
@@ -131,7 +132,7 @@ class MockCamera(BaseCamera):
 
         # Compute X and Z (Y is always 0)
         xDistance = math.sin(math.radians(angle)) * distance
-        zDistance = math.cos(math.radians(angle)) * distance
+        zDistance = abs(math.cos(math.radians(angle)) * distance)
 
         if isLeftward:
             xDistance = 0.0 - xDistance
@@ -139,7 +140,7 @@ class MockCamera(BaseCamera):
         detection = Detection(xDistance, 0.0, zDistance, 1.0, MOCK_FPS)
         self._detections = [detection]
 
-        print('DEBUG :: new mock detection. x: ' + str(xDistance) + ', z: ' + str(zDistance) + ', bearingDifference: ' + str(angle))
+        print('DEBUG :: new mock detection. x: ' + str(xDistance) + ', z: ' + str(zDistance) + ', bearingDifference: ' + str(angle) + ', newHeading: ' + str(newHeading))
 
     def stop(self):
         global STOP

@@ -76,7 +76,7 @@ def thread(callback, _pipeline, outputFrames):
             personDetections = []
             for detection in detections:
                 if detection.label == 0:
-                    personDetections.append(Detection(detection.spatialCoordinates.x, detection.spatialCoordinates.y, detection.spatialCoordinates.z, detection.confidence, fps))
+                    personDetections.append(Detection(detection.spatialCoordinates.x / 1000.0, detection.spatialCoordinates.y / 1000.0, detection.spatialCoordinates.z / 1000.0, detection.confidence, fps))
 
                     if outputFrames:
                         # Denormalize bounding box

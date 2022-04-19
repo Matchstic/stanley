@@ -27,3 +27,6 @@ class BaseRule:
 
     def getState(self) -> Tuple[Tuple[float, float], float]:
         return (self._targetPosition, self._targetYaw)
+
+    def name(self) -> str:
+        return 'base'

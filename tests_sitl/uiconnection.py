@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import time
 import threading
+import json
 
 def UIThread(connection):
     connection.run()
@@ -11,6 +12,8 @@ class UIConnection:
     _sendQueue = []
     _lock = asyncio.Lock()
     _active = False
+
+    _onDataCallback = None
 
     def __init__(self):
         thread = threading.Thread(target=UIThread, args=(self,))
@@ -28,26 +31,34 @@ class UIConnection:
         while True:
             await asyncio.sleep(0.05)
 
-            async with self._lock:
-                if len(self._sendQueue) == 0:
-                    continue
+            if len(self._sendQueue) == 0:
+                continue
 
-                message = '\n'.join(self._sendQueue)
+            message = '\n'.join(self._sendQueue)
 
-                try:
-                    await websocket.send(message)
-                except websockets.exceptions.ConnectionClosedOK:
-                    print('connection closed during send')
+            try:
+                await websocket.send(message)
+            except websockets.exceptions.ConnectionClosedOK:
+                print('connection closed during send')
 
-                self._sendQueue = []
+            self._sendQueue = []
 
     async def receiveHandler(self, websocket, _):
         async for message in websocket:
-            await self.printMsg(message)
+            await self.handleMessage(message)
 
-    async def printMsg(self, msg):
-        return
-        print(msg)
+    async def handleMessage(self, data: str):
+        if self._onDataCallback == None:
+            return
+
+        # newline split json. Convert to object then pass up-chain
+        messages = data.split('\n')
+
+        for message in messages:
+            try:
+                self._onDataCallback(json.loads(message))
+            except Exception as e:
+                print(e)
 
     async def main(self):
         self.stop_event = threading.Event()
@@ -66,12 +77,11 @@ class UIConnection:
     def active(self):
         return self._active
 
-    async def _send(self, json):
-        async with self._lock:
-            self._sendQueue.append(json)
+    def send(self, data):
+        self._sendQueue.append(json.dumps(data))
 
-    def send(self, json):
-        asyncio.run(self._send(json))
+    def setOnDataCallback(self, callback):
+        self._onDataCallback = callback
 
 if __name__ == '__main__':
     connection = UIConnection()

@@ -30,6 +30,8 @@ class Core:
     state: ExecutionState = ExecutionState.Init
     rules: list[BaseRule] = []
 
+    activeRule = 'n/a'
+
     def __init__(self, vehicle: Vehicle, camera: BaseCamera):
         self.camera = camera
         self.vehicle = vehicle
@@ -147,6 +149,7 @@ class Core:
                 for rule in self.rules:
                     if rule.isActive():
                         state = rule.getState()
+                        self.activeRule = rule.name()
                         break
 
                 # Apply local translation and yaw differential

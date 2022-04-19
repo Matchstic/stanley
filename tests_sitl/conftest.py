@@ -52,7 +52,8 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
                 "altitude": vehicleGlobalFrame.alt
             },
             "core": {
-                "state": core.state
+                "state": core.state,
+                "rule": core.activeRule
             }
         }
 
@@ -66,7 +67,7 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
                 }
             }
 
-        ui.send(json.dumps(message))
+        ui.send(message)
 
         time.sleep(0.1)
 
@@ -76,7 +77,7 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
 
     print('stopped ui thread')
 
-def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL]:
+def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL, UIConnection]:
     '''
     Prepares the SITL environment for a test.
 
