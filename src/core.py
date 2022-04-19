@@ -3,7 +3,7 @@ import time
 from enum import Enum
 from constants import ALTITUDE, HEARTBEAT_TIMEOUT, ALTITUDE_FUZZINESS
 
-from commands import clearROI, setPositionTarget
+from commands import setPositionTarget
 from dronekit import Vehicle, VehicleMode
 from camera.base import BaseCamera
 
@@ -22,8 +22,6 @@ class ExecutionState(str, Enum):
     PilotOnly      = "PILOT_ONLY"
     ConnectionLoss = "CONNECTION_LOSS"
     Stop           = "STOP"
-
-ALLOWED_MODES = ['GUIDED', 'LOITER']
 
 class Core:
 
@@ -55,7 +53,7 @@ class Core:
     def modeCallback(self, _, _1, _2) -> None:
         print("Vehicle mode %s" % (self.vehicle.mode,))
 
-        if self.vehicle.mode.name not in ALLOWED_MODES and self.state == ExecutionState.Running:
+        if self.vehicle.mode.name != "GUIDED" and self.state == ExecutionState.Running:
             self.state = ExecutionState.PilotOnly
 
     def armedCallback(self, _, _1, _2) -> None:
@@ -72,7 +70,7 @@ class Core:
 
     def isReady(self) -> bool:
         return self.vehicle.armed and \
-                self.vehicle.mode.name in ALLOWED_MODES and \
+                self.vehicle.mode.name == "GUIDED" and \
                 self.vehicle.location.global_relative_frame.alt > 0.5 # Indicates we are actually flying
 
     def isAltitudeOk(self) -> bool:
@@ -84,7 +82,7 @@ class Core:
     def armable(self) -> bool:
         return not self.vehicle.armed and \
                 self.vehicle.is_armable and \
-                self.vehicle.mode.name in ALLOWED_MODES
+                self.vehicle.mode.name == "GUIDED"
 
     #### State machine
 
@@ -128,9 +126,6 @@ class Core:
                     # Prepare for running by resetting rules
                     for rule in self.rules:
                         rule.reset()
-
-                    # And, clear any guided state remaining from a previous run
-                    clearROI(self.vehicle)
 
                     print('entered running state')
 
