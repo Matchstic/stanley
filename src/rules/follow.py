@@ -16,12 +16,11 @@ class FollowRule(BaseRule):
             return
 
         xDistance = detection.x
-        zDistance = detection.z
+        zDistance = detection.z - MINIMUM_DISTANCE
         heading = 0
 
         # enforce minimum distance where possible
-        if zDistance < MINIMUM_DISTANCE:
-            zDistance = zDistance - MINIMUM_DISTANCE
+        if detection.z < MINIMUM_DISTANCE:
             heading = self.headingChange(xDistance, MINIMUM_DISTANCE)
         else:
             heading = self.headingChange(xDistance, zDistance)
@@ -32,7 +31,7 @@ class FollowRule(BaseRule):
     def headingChange(self, xDistance, zDistance):
         isLeftward = xDistance < 0
 
-        changeRadians = math.atan(xDistance / zDistance)
+        changeRadians = math.atan(abs(xDistance) / zDistance)
         changeDegrees = math.degrees(changeRadians)
 
         return float((0.0 - changeDegrees) if isLeftward == True else changeDegrees)

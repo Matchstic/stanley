@@ -1,5 +1,5 @@
 from .base import BaseRule
-from constants import BACKOFF_DISTANCE
+from constants import BACKOFF_DISTANCE, MINIMUM_DISTANCE
 
 class BackoffRule(BaseRule):
     '''
@@ -18,7 +18,7 @@ class BackoffRule(BaseRule):
         xDistance = detection.x
         zDistance = detection.z
 
-        self._targetPosition = (zDistance - BACKOFF_DISTANCE, xDistance)
+        self._targetPosition = (zDistance - MINIMUM_DISTANCE, xDistance)
 
     def name(self) -> str:
         return 'backoff'

@@ -4,6 +4,7 @@
       :core="core"
       :vehicle="vehicle"
       :connected="connected"
+      :person="person"
     />
 
     <MglMap
@@ -71,6 +72,7 @@ export default class App extends Vue {
 
   private core = {}
   private vehicle = {}
+  private person = {}
   private connected = false
   private inputLoop = null
 
@@ -91,8 +93,12 @@ export default class App extends Vue {
       // Update map trace
       this.updateTrack(this.position, 'drone')
 
-      if (data.person)
+      if (data.person) {
+        this.person = data.person
         this.updateTrack([data.person.global.longitude, data.person.global.latitude], 'person')
+      } else {
+        this.person = {}
+      }
     }
 
     manager.onreset = () => {
@@ -123,9 +129,6 @@ export default class App extends Vue {
     const EARTH = 6378137
 
     this.inputLoop = setInterval(() => {
-      if (!this.connected)
-        return
-
       const { DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } = ResponsiveGamepad.getState()
       const [startLongitude, startLatitude] = this.personPosition
 

@@ -2,7 +2,7 @@ from time import time
 from tests_sitl.conftest import prepareForTest, shutdownAfterTest
 import time
 
-[core, vehicle, camera, sitl, ui] = prepareForTest(timeout=False)
+[core, vehicle, camera, sitl, ui] = prepareForTest(timeout=False, verbose=True)
 
 def uicallback(data):
     # Set person in mock camera

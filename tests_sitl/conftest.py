@@ -33,6 +33,10 @@ def core_thread(core):
 def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera):
     print('running ui thread...')
 
+    # On startup, send reset message
+    resetMessage = { "type": "reset" }
+    ui.send(json.dumps(resetMessage))
+
     while ui.active():
         # generate json blob of data to send
         vehicleGlobalFrame = vehicle.location.global_relative_frame
@@ -77,7 +81,7 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
 
     print('stopped ui thread')
 
-def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL, UIConnection]:
+def prepareForTest(timeout = True, verbose=False) -> Tuple[Core, Vehicle, MockCamera, SITL, UIConnection]:
     '''
     Prepares the SITL environment for a test.
 
@@ -90,7 +94,7 @@ def prepareForTest(timeout = True) -> Tuple[Core, Vehicle, MockCamera, SITL, UIC
 
     sitl = SITL(path=os.path.abspath('./.dronekit/arducopter'), defaults_filepath=os.path.abspath('./.dronekit/copter-hexa.parm'))
     sitl_args = ['--model', 'hexa']
-    sitl.launch(sitl_args, await_ready=True, restart=False)
+    sitl.launch(sitl_args, await_ready=True, restart=False, verbose=verbose)
 
     connection_string = sitl.connection_string()
 

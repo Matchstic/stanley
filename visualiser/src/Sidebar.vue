@@ -29,6 +29,18 @@
       </div>
     </div>
 
+    <div class="sidebar-data">
+      <div class="sidebar-datum large">
+        {{ personZ }}m
+        <span>Person Z</span>
+      </div>
+
+      <div class="sidebar-datum large">
+        {{ personX }}m
+        <span>Person X</span>
+      </div>
+    </div>
+
     <Modeswitch
       :options="options"
       default-key="e2e"
@@ -58,6 +70,14 @@ export default class Sidebar extends Vue {
   public readonly vehicle: {
     heading: number
     altitude: number
+  }
+
+  @Prop()
+  public readonly person: {
+    local: {
+      z: number
+      x: number
+    }
   }
 
   @Prop()
@@ -98,6 +118,14 @@ export default class Sidebar extends Vue {
 
   get linkState(): string {
     return this.connected ? 'TRUE' : 'FALSE'
+  }
+
+  get personX(): string {
+    return `${this.person?.local?.x.toFixed(2) || '?'}`
+  }
+
+  get personZ(): string {
+    return `${this.person?.local?.z.toFixed(2) || '?'}`
   }
 }
 </script>

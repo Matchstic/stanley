@@ -106,33 +106,32 @@ class MockCamera(BaseCamera):
         vehicleGlobalFrame = self.vehicle.location.global_relative_frame
         vehicleLatitude  = vehicleGlobalFrame.lat
         vehicleLongitude = vehicleGlobalFrame.lon
-        vehicleHeading   = self.vehicle.heading
+        vehicleHeading   = self.vehicle.heading # 0 to 360
 
         # Get normalised bearing
-        newHeading = self.headingBetween(latitude, longitude, vehicleLatitude, vehicleLongitude)
+        newHeading = self.headingBetween(vehicleLatitude, vehicleLongitude, latitude, longitude)
         headingDiff = self.headingDiff(vehicleHeading, newHeading)
         angle = abs(headingDiff)
         isLeftward = headingDiff < 0
 
-        '''if angle >= MOCK_FOV / 2:
+        if angle >= MOCK_FOV / 2:
             # Outside the vehicle's FOV, not a detection
             self._detections = []
-            print('DEBUG :: Outside FOV, no detections')
-            return'''
+            # print('DEBUG :: Outside FOV, no detections')
+            return
 
         # Get distance between positions
         distance = self.distanceBetween(latitude, longitude, vehicleLatitude, vehicleLongitude)
-        print(distance, angle)
 
         if distance >= MOCK_Z_MAX:
             # Too far away to be counted as a detection
             self._detections = []
-            print('DEBUG :: Beyond max distance, no detections')
+            # print('DEBUG :: Beyond max distance, no detections')
             return
 
         # Compute X and Z (Y is always 0)
         xDistance = math.sin(math.radians(angle)) * distance
-        zDistance = abs(math.cos(math.radians(angle)) * distance)
+        zDistance = math.cos(math.radians(angle)) * distance
 
         if isLeftward:
             xDistance = 0.0 - xDistance
@@ -140,7 +139,7 @@ class MockCamera(BaseCamera):
         detection = Detection(xDistance, 0.0, zDistance, 1.0, MOCK_FPS)
         self._detections = [detection]
 
-        print('DEBUG :: new mock detection. x: ' + str(xDistance) + ', z: ' + str(zDistance) + ', bearingDifference: ' + str(angle) + ', newHeading: ' + str(newHeading))
+        # print('DEBUG :: new mock detection. x: ' + str(xDistance) + ', z: ' + str(zDistance) + ', bearingDifference: ' + str(angle) + ', newHeading: ' + str(newHeading))
 
     def stop(self):
         global STOP
@@ -164,9 +163,11 @@ class MockCamera(BaseCamera):
 
         bearing = math.degrees(math.atan2(y, x))
 
-        # Normalise to compass
+        # Normalise to compass (negative is to the right)
         if bearing < 0:
-            bearing += 360
+            bearing = abs(bearing)
+        elif bearing > 0:
+            bearing = 360 - bearing
 
         return bearing
 
