@@ -73,6 +73,7 @@ class Core:
     def isReady(self) -> bool:
         return self.vehicle.armed and \
                 self.vehicle.mode.name == "GUIDED" and \
+                self.camera.running() and \
                 self.vehicle.location.global_relative_frame.alt > 0.5 # Indicates we are actually flying
 
     def isAltitudeOk(self) -> bool:
@@ -84,7 +85,8 @@ class Core:
     def armable(self) -> bool:
         return not self.vehicle.armed and \
                 self.vehicle.is_armable and \
-                self.vehicle.mode.name == "GUIDED"
+                self.vehicle.mode.name == "GUIDED" and \
+                self.camera.running()
 
     #### State machine
 
@@ -93,14 +95,23 @@ class Core:
 
             if self.state is ExecutionState.Init:
                 # Do nothing during setup.
+                time.sleep(0.1)
                 pass
             elif self.state is ExecutionState.AwaitingArm:
                 if self.armable():
-                    # Enforce GUIDED at takeoff
+                    # Enforce GUIDED at takeoff only.
+                    # Any in-flight toggles must be respected.
+
+                    print('Switching to GUIDED mode')
                     self.vehicle.mode = VehicleMode("GUIDED")
 
                     time.sleep(5) # safety delay
-                    self.state = ExecutionState.Takeoff
+
+                    if self.state != ExecutionState.Stop:
+                        self.state = ExecutionState.Takeoff
+
+                else:
+                    time.sleep(0.1)
 
             elif self.state is ExecutionState.Takeoff:
                 print('takeoff mode')
@@ -137,6 +148,8 @@ class Core:
                 elif self.vehicle.mode.name != 'GUIDED':
                     self.state = ExecutionState.PilotOnly
 
+                time.sleep(0.1)
+
             elif self.state is ExecutionState.Running:
                 # Mode and armed callbacks handle exiting this state.
 
@@ -167,6 +180,17 @@ class Core:
                 # Pilot is in control. Do nothing until we have disarmed again.
                 time.sleep(0.1)
                 pass
+
+        # At this point, we are no longer running. Attempt to land if in-flight, else we
+        # leave the platform in a dangerous state.
+
+        if self.isReady() and self.isConnected() and self.isAltitudeOk():
+            # Land now!
+            self.vehicle.mode = VehicleMode('RTL')
+            self.vehicle.wait_for_alt(0)
+
+        if self.vehicle.armed:
+            self.vehicle.disarm()
 
     def stop(self) -> None:
         self.state = ExecutionState.Stop

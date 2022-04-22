@@ -8,11 +8,15 @@ import time
 import cv2
 import threading
 
-from ..constants import DETECTION_THRESH
+from constants import DETECTION_THRESH
 
 THREAD_STOP = False
+BLOB_PATH   = str((Path(__file__).parent / Path('../../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+RUNNING     = False
 
 def thread(callback, _pipeline, outputFrames):
+    global THREAD_STOP, RUNNING
+
     with dai.Device(_pipeline) as device:
         # Output queues will be used to get the rgb frames and nn data from the outputs defined above
         previewQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
@@ -25,6 +29,9 @@ def thread(callback, _pipeline, outputFrames):
         fps = 0
         color = (255, 255, 255)
 
+        print('Camera has started, outputting frames: ' + str(outputFrames))
+        RUNNING = True
+
         while THREAD_STOP == False:
             inPreview = previewQueue.get()
             inDet = detectionNNQueue.get()
@@ -32,6 +39,7 @@ def thread(callback, _pipeline, outputFrames):
 
             frame = None
             depthFrame = None
+            depthFrameColor = None
 
             if outputFrames:
                 frame = inPreview.getCvFrame()
@@ -85,10 +93,9 @@ def thread(callback, _pipeline, outputFrames):
                         y1 = int(detection.ymin * height)
                         y2 = int(detection.ymax * height)
 
-                        cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                        cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                        cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                        cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x / 1000)} m", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y / 1000)} m", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z / 1000)} m", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
 
                         cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
@@ -97,18 +104,25 @@ def thread(callback, _pipeline, outputFrames):
 
             callback(personDetections, frame if outputFrames else None)
 
+        RUNNING = False
+
+        print('Stopping camera...')
+
         previewQueue.close()
         detectionNNQueue.close()
         xoutBoundingBoxDepthMappingQueue.close()
         depthQueue.close()
 
-BLOB_PATH = str((Path(__file__).parent / Path('../../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+        print('Camera has stopped')
 
 class YoloCamera(BaseCamera):
 
     _thread = None
-    _detections = None
+    _detections = []
     _userCallback = None
+
+    def previewSize():
+        return (416, 416)
 
     def __init__(self, callback = None):
         self.setup()
@@ -176,6 +190,11 @@ class YoloCamera(BaseCamera):
         self._stereo.depth.link(self._spatialDetectionNetwork.inputDepth)
         self._spatialDetectionNetwork.passthroughDepth.link(self._xoutDepth.input)
 
+    def running(self):
+        global RUNNING
+
+        return RUNNING
+
     def start(self):
         self._thread = threading.Thread(target=thread, args=(self._callback, self._pipeline, self._userCallback != None))
         self._thread.start()
@@ -184,7 +203,7 @@ class YoloCamera(BaseCamera):
         global THREAD_STOP
         THREAD_STOP = True
 
-        self._thread.join()
+        self._thread.join(5)
 
     def _callback(self, detections, frame):
         self._detections = detections

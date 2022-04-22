@@ -41,9 +41,6 @@ def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeY
 
     localNorth, localEast = position
 
-    if vehicle.mode.name != 'GUIDED':
-        vehicle.mode = VehicleMode("GUIDED")
-
     # Find altitude target
     currentAltitude = vehicle.location.global_relative_frame.alt
     targetAltOffset = 0 - (ALTITUDE - currentAltitude) # up is negative

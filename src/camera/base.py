@@ -3,6 +3,9 @@ class BaseCamera:
     def __init__(self):
         pass
 
+    def running(self):
+        return False
+
     def detections(self):
         return []
 

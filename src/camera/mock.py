@@ -78,6 +78,9 @@ class MockCamera(BaseCamera):
     def __init__(self, vehicle):
         self.vehicle = vehicle
 
+    def running(self):
+        return True
+
     def playbackGPXFromFile(self, filepath):
         file = open(filepath, 'r')
         if file == None:
