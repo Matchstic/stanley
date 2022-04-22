@@ -58,27 +58,28 @@ def signal_handler(sig, frame):
 def main(args):
     global EXIT, core, camera, vehicle, videoWriter
 
-    print('Searching for killswitch at: ' + args.killswitch_path)
-
-    if args.video:
-        print('Saving videos to: ' + args.video_path)
-
-        if not os.path.exists(args.video_path):
-            os.makedirs(args.video_path, exist_ok=True)
-
-        fileCount = len(os.listdir(args.video_path))
-        videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
-
     thread = None
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
+
+    print('Searching for killswitch at: ' + args.killswitch_path)
 
     if os.path.exists(args.killswitch_path):
         print("Killswitch engaged, preventing run")
         while not EXIT:
             time.sleep(1)
     else:
+        if args.video:
+            print('Saving videos to: ' + args.video_path)
+
+            if not os.path.exists(args.video_path):
+                print('Video path ' + args.video_path + ' does not exist.')
+                sys.exit(1)
+
+            fileCount = len(os.listdir(args.video_path))
+            videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
+
         print("Connecting to vehicle on: %s" % (args.uri,))
         vehicle = connect(args.uri, wait_ready=True)
 
@@ -100,9 +101,10 @@ def main(args):
     if thread:
         thread.join(5)
 
-    videoWriter.release()
+    if videoWriter:
+        videoWriter.release()
 
-    print('Thank you for flying Matchstic Air. We wish you a pleasant onwards journey.')
+    print('Thank you for flying Matchstic Air. We wish you a pleasant onward journey.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
