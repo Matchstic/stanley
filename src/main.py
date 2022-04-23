@@ -2,6 +2,10 @@ import sys
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
 
+import platform
+if platform.machine() == 'aarch64':  # Jetson
+    os.environ['OPENBLAS_CORETYPE'] = "ARMV8"
+
 from dronekit import connect, Vehicle
 from core import Core
 from camera.yolocam import YoloCamera
@@ -13,9 +17,6 @@ import threading
 import signal
 import cv2
 import platform
-
-if platform.machine() == 'aarch64':  # Jetson
-    os.environ['OPENBLAS_CORETYPE'] = "ARMV8"
 
 PARENT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
