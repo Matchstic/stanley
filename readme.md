@@ -30,6 +30,28 @@ A full SITL environment is used for testing, and I have built a visualisation to
 
 I wrote some integration tests, but definitely don't have full coverage.
 
+
+### Jetson Nano
+
+```
+sudo apt install zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev
+cd ~/Downloads
+wget https://www.python.org/ftp/python/3.9.12/Python-3.9.12.tar.xz
+tar xvf Python-3.9.12.tar.xz
+mkdir build-python-3.9
+cd build-python-3.9
+../Python-3.9.12/configure --enable-optimizations
+make -j $(nproc)
+make altinstall
+python3.9 -m pip install wheel # needed to install pymavlink correctly
+```
+
+https://docs.luxonis.com/projects/api/en/v2.2.1.0/install/#ubuntu
+
+```
+python3.9 -m pip install dronekit dronekit-sitl pymavlink pytest depthai-sdk gpxpy websockets asyncio
+```
+
 ### License
 
 Licensed under GPLv3.
