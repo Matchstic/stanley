@@ -52,6 +52,15 @@ https://docs.luxonis.com/projects/api/en/v2.2.1.0/install/#ubuntu
 python3.9 -m pip install dronekit dronekit-sitl pymavlink pytest depthai-sdk gpxpy websockets asyncio
 ```
 
+Setup udev rules:
+
+```
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | sudo tee /etc/udev/rules.d/80-movidius.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+if using MAVProxy already on the system, make sure to start it with `--out 127.0.0.1:14550`. Then, can run `python3.9 src/main.py --uri 127.0.0.1:14550`
+
 ### License
 
 Licensed under GPLv3.
