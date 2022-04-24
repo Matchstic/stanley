@@ -55,8 +55,20 @@ class Core:
     def modeCallback(self, _, _1, _2) -> None:
         print("Vehicle mode %s" % (self.vehicle.mode,))
 
-        if self.vehicle.mode.name != "GUIDED" and self.state == ExecutionState.Running:
+        if self.vehicle.mode.name != "GUIDED" and self.state not in [ExecutionState.Init, ExecutionState.ConnectionLoss, ExecutionState.Stop]:
             self.state = ExecutionState.PilotOnly
+        elif self.vehicle.mode.name == "GUIDED":
+            print('ensuring we are landed and safe before restarting core flow')
+
+            if self.isReady() and self.isConnected():
+                # Land now!
+                self.vehicle.mode = VehicleMode('RTL')
+                self.vehicle.wait_for_alt(0)
+
+            if self.vehicle.armed:
+                self.vehicle.disarm()
+
+            self.state = ExecutionState.AwaitingArm
 
     def armedCallback(self, _, _1, _2) -> None:
         print("Vehicle armed %d" % (self.vehicle.armed,))
@@ -95,7 +107,7 @@ class Core:
 
             if self.state is ExecutionState.Init:
                 # Do nothing during setup.
-                time.sleep(0.1)
+                time.sleep(1)
                 pass
             elif self.state is ExecutionState.AwaitingArm:
                 if self.armable():
@@ -173,12 +185,12 @@ class Core:
 
             elif self.state is ExecutionState.ConnectionLoss:
                 # until reconnected, nothing we can do.
-                time.sleep(0.1)
+                time.sleep(1)
                 pass
 
             elif self.state is ExecutionState.PilotOnly:
                 # Pilot is in control. Do nothing until we have disarmed again.
-                time.sleep(0.1)
+                time.sleep(1)
                 pass
 
         # At this point, we are no longer running. Attempt to land if in-flight, else we
