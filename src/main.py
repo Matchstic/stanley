@@ -82,7 +82,7 @@ def main(args):
             videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
 
         print("Connecting to vehicle on: %s" % (args.uri,))
-        vehicle = connect(args.uri, wait_ready=True)
+        vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
 
         if not EXIT:
             camera = YoloCamera(camera_callback if args.video else None)
