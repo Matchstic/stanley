@@ -58,12 +58,12 @@ class Core:
         if self.vehicle.mode.name != "GUIDED" and self.state not in [ExecutionState.Init, ExecutionState.ConnectionLoss, ExecutionState.Stop]:
             self.state = ExecutionState.PilotOnly
         elif self.vehicle.mode.name == "GUIDED":
-            print('ensuring we are landed and safe before restarting core flow')
-
             if self.isReady() and self.isConnected():
-                # Land now!
-                self.vehicle.mode = VehicleMode('RTL')
-                self.vehicle.wait_for_alt(0)
+                # Go into loiter mode because this is totally undefined now
+                # The pilot needs to set the vehicle down and then switch back into GUIDED
+                print('Cannot restart core flow due to being airborne!')
+                setPositionTarget(self.vehicle, (0,0), 0)
+                return
 
             if self.vehicle.armed:
                 self.vehicle.disarm()
@@ -111,12 +111,6 @@ class Core:
                 pass
             elif self.state is ExecutionState.AwaitingArm:
                 if self.armable():
-                    # Enforce GUIDED at takeoff only.
-                    # Any in-flight toggles must be respected.
-
-                    print('Switching to GUIDED mode')
-                    self.vehicle.mode = VehicleMode("GUIDED")
-
                     time.sleep(5) # safety delay
 
                     if self.state != ExecutionState.Stop:
