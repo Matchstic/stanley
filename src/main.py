@@ -3,6 +3,7 @@ if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
 
 import platform
+import os
 if platform.machine() == 'aarch64':  # Jetson
     os.environ['OPENBLAS_CORETYPE'] = "ARMV8"
 
@@ -11,7 +12,6 @@ from core import Core
 from camera.yolocam import YoloCamera
 
 import argparse
-import os
 import time
 import threading
 import signal
