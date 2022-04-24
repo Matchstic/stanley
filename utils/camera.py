@@ -3,6 +3,8 @@ import os.path
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
+sys.path.insert(0, './src')
+
 from src.camera.yolocam import YoloCamera
 import cv2
 
@@ -25,10 +27,13 @@ def callback(detections, frame):
 camera = YoloCamera(callback)
 camera.start()
 
-while EXIT == False:
-    if HAS_FRAME:
-        cv2.imshow("rgb", FRAME)
-        if cv2.waitKey(1) == ord('q'):
-            EXIT = True
+try:
+    while EXIT == False:
+        if HAS_FRAME:
+            cv2.imshow("rgb", FRAME)
+            if cv2.waitKey(1) == ord('q'):
+                EXIT = True
+except KeyboardInterrupt:
+    EXIT = True
 
 camera.stop()

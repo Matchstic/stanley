@@ -21,8 +21,6 @@ def thread(callback, _pipeline, outputFrames):
         # Output queues will be used to get the rgb frames and nn data from the outputs defined above
         previewQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
         detectionNNQueue = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
-        xoutBoundingBoxDepthMappingQueue = device.getOutputQueue(name="boundingBoxDepthMapping", maxSize=4, blocking=False)
-        depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
 
         startTime = time.monotonic()
         counter = 0
@@ -35,19 +33,11 @@ def thread(callback, _pipeline, outputFrames):
         while THREAD_STOP == False:
             inPreview = previewQueue.get()
             inDet = detectionNNQueue.get()
-            depth = depthQueue.get()
 
             frame = None
-            depthFrame = None
-            depthFrameColor = None
 
             if outputFrames:
                 frame = inPreview.getCvFrame()
-                depthFrame = depth.getFrame() # depthFrame values are in millimeters
-
-                depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
-                depthFrameColor = cv2.equalizeHist(depthFrameColor)
-                depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
 
             counter+=1
             current_time = time.monotonic()
@@ -57,21 +47,6 @@ def thread(callback, _pipeline, outputFrames):
                 startTime = current_time
 
             detections = inDet.detections
-            if outputFrames and len(detections) != 0:
-                boundingBoxMapping = xoutBoundingBoxDepthMappingQueue.get()
-                roiDatas = boundingBoxMapping.getConfigData()
-
-                for roiData in roiDatas:
-                    roi = roiData.roi
-                    roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
-                    topLeft = roi.topLeft()
-                    bottomRight = roi.bottomRight()
-                    xmin = int(topLeft.x)
-                    ymin = int(topLeft.y)
-                    xmax = int(bottomRight.x)
-                    ymax = int(bottomRight.y)
-
-                    cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
 
             # If the frame is available, draw bounding boxes on it and show the frame
             height = 0
@@ -93,9 +68,9 @@ def thread(callback, _pipeline, outputFrames):
                         y1 = int(detection.ymin * height)
                         y2 = int(detection.ymax * height)
 
-                        cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x / 1000)} m", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                        cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y / 1000)} m", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                        cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z / 1000)} m", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"X: {(detection.spatialCoordinates.x / 1000.0):.2f} m", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"Y: {(detection.spatialCoordinates.y / 1000.0):.2f} m", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"Z: {(detection.spatialCoordinates.z / 1000.0):.2f} m", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
 
                         cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
@@ -110,8 +85,6 @@ def thread(callback, _pipeline, outputFrames):
 
         previewQueue.close()
         detectionNNQueue.close()
-        xoutBoundingBoxDepthMappingQueue.close()
-        depthQueue.close()
 
         print('Camera has stopped')
 
@@ -141,13 +114,9 @@ class YoloCamera(BaseCamera):
 
         self._xoutRgb = self._pipeline.create(dai.node.XLinkOut)
         self._xoutNN = self._pipeline.create(dai.node.XLinkOut)
-        self._xoutBoundingBoxDepthMapping = self._pipeline.create(dai.node.XLinkOut)
-        self._xoutDepth = self._pipeline.create(dai.node.XLinkOut)
 
         self._xoutRgb.setStreamName("rgb")
         self._xoutNN.setStreamName("detections")
-        self._xoutBoundingBoxDepthMapping.setStreamName("boundingBoxDepthMapping")
-        self._xoutDepth.setStreamName("depth")
 
         # Properties
         self._camRgb.setPreviewSize(416, 416)
@@ -183,12 +152,9 @@ class YoloCamera(BaseCamera):
 
         self._camRgb.preview.link(self._spatialDetectionNetwork.input)
         self._spatialDetectionNetwork.passthrough.link(self._xoutRgb.input)
-
         self._spatialDetectionNetwork.out.link(self._xoutNN.input)
-        self._spatialDetectionNetwork.boundingBoxMapping.link(self._xoutBoundingBoxDepthMapping.input)
 
         self._stereo.depth.link(self._spatialDetectionNetwork.inputDepth)
-        self._spatialDetectionNetwork.passthroughDepth.link(self._xoutDepth.input)
 
     def running(self):
         global RUNNING
