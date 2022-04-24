@@ -51,8 +51,6 @@ def stop():
     if camera:
         camera.stop()
 
-    print('DEBUG :: Stop finished')
-
 def signal_handler(sig, frame):
     stop()
 
@@ -71,21 +69,22 @@ def main(args):
         while not EXIT:
             time.sleep(1)
     else:
+        videoEnabled = args.video
         if args.video:
             print('Saving videos to: ' + args.video_path)
 
             if not os.path.exists(args.video_path):
-                print('Video path ' + args.video_path + ' does not exist.')
-                sys.exit(1)
-
-            fileCount = len(os.listdir(args.video_path))
-            videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
+                print('WARNING: Video path ' + args.video_path + ' does not exist.\nNot recording video.')
+                videoEnabled = False
+            else:
+                fileCount = len(os.listdir(args.video_path))
+                videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
 
         print("Connecting to vehicle on: %s" % (args.uri,))
         vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
 
         if not EXIT:
-            camera = YoloCamera(camera_callback if args.video else None)
+            camera = YoloCamera(camera_callback if videoEnabled else None)
             camera.start()
 
             # Setup core thread
