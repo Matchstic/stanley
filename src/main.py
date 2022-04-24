@@ -85,6 +85,8 @@ def main(args):
     if not os.path.exists(logpath):
         logpath = os.path.join(PARENT_DIRECTORY, 'logs')
 
+        print('WARNING Log path not found, redirecting to: ' + os.path.join(PARENT_DIRECTORY, 'logs'))
+
         # In the event the user has not got a relative `logs` folder
         if not os.path.exists(logpath):
             os.mkdir(logpath)
@@ -111,7 +113,7 @@ def main(args):
     logging.info('Searching for killswitch at: ' + args.killswitch_path)
 
     if os.path.exists(args.killswitch_path):
-        logging.warn("Killswitch engaged, preventing run")
+        logging.warning("Killswitch engaged, preventing run")
         while not EXIT:
             time.sleep(1)
     else:
@@ -120,7 +122,7 @@ def main(args):
             logging.info('Saving videos to: ' + args.video_path)
 
             if not os.path.exists(args.video_path):
-                logging.warn('Video path ' + args.video_path + ' does not exist, not recording video.')
+                logging.warning('Video path ' + args.video_path + ' does not exist, not recording video.')
                 videoEnabled = False
             else:
                 fileCount = len(os.listdir(args.video_path))
