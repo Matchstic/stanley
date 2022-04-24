@@ -17,6 +17,7 @@ import threading
 import signal
 import cv2
 import platform
+import logging
 
 PARENT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
@@ -26,15 +27,32 @@ camera: YoloCamera = None
 vehicle: Vehicle   = None
 videoWriter        = None
 
+# See: https://stackoverflow.com/a/66209331
+class LoggerWriter:
+    def __init__(self, logfct):
+        self.logfct = logfct
+        self.buf = []
+
+    def write(self, msg):
+        if msg.endswith('\n'):
+            self.buf.append(msg.removesuffix('\n'))
+            self.logfct(''.join(self.buf))
+            self.buf = []
+        else:
+            self.buf.append(msg)
+
+    def flush(self):
+        pass
+
 def core_thread(core):
     global EXIT
 
     if EXIT:
         return
 
-    print('Running core')
+    logging.debug('Running core')
     core.run()
-    print('Stopped core')
+    logging.debug('Stopped core')
 
 def camera_callback(detections, cvFrame):
     global videoWriter
@@ -62,25 +80,53 @@ def main(args):
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    print('Searching for killswitch at: ' + args.killswitch_path)
+    # Setup the log file
+    logpath = args.log_path
+    if not os.path.exists(logpath):
+        logpath = os.path.join(PARENT_DIRECTORY, 'logs')
+
+        # In the event the user has not got a relative `logs` folder
+        if not os.path.exists(logpath):
+            os.mkdir(logpath)
+
+    fileCount = len(os.listdir(logpath))
+    logFile = os.path.join(logpath, str(fileCount) + '.log')
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)-15s %(levelname)-8s %(message)s",
+        handlers=[
+            logging.FileHandler(logFile),
+            logging.StreamHandler()
+        ]
+    )
+
+    logger = logging.getLogger()
+
+    # messing around with stdout for logging to file
+    # this is nasty but whatever
+    sys.stdout = LoggerWriter(logger.info)
+    sys.stderr = LoggerWriter(logger.error)
+
+    logging.info('Searching for killswitch at: ' + args.killswitch_path)
 
     if os.path.exists(args.killswitch_path):
-        print("Killswitch engaged, preventing run")
+        logging.warn("Killswitch engaged, preventing run")
         while not EXIT:
             time.sleep(1)
     else:
         videoEnabled = args.video
         if args.video:
-            print('Saving videos to: ' + args.video_path)
+            logging.info('Saving videos to: ' + args.video_path)
 
             if not os.path.exists(args.video_path):
-                print('WARNING: Video path ' + args.video_path + ' does not exist.\nNot recording video.')
+                logging.warn('Video path ' + args.video_path + ' does not exist, not recording video.')
                 videoEnabled = False
             else:
                 fileCount = len(os.listdir(args.video_path))
                 videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
 
-        print("Connecting to vehicle on: %s" % (args.uri,))
+        logging.info("Connecting to vehicle on: %s" % (args.uri,))
         vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
 
         if not EXIT:
@@ -93,7 +139,7 @@ def main(args):
             thread.start()
 
             while not EXIT:
-                print('DEBUG :: core state is: ' + core.state)
+                logging.debug('core state is: ' + core.state)
                 time.sleep(1)
 
     # Signal handler will set the value of EXIT
@@ -104,13 +150,14 @@ def main(args):
     if videoWriter:
         videoWriter.release()
 
-    print('Thank you for flying Matchstic Air. We wish you a pleasant onward journey.')
+    logging.info('Thank you for flying Matchstic Air. We wish you a pleasant onward journey.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--uri', type=str, required=True, help="URI to connect with for MAVLink data. e.g., udp:127.0.0.1:14550")
     parser.add_argument('--video', required=False, default=False, help="Specify to save video of detections", action='store_true')
+    parser.add_argument('--log_path', type=str, required=False, default=os.path.join(PARENT_DIRECTORY, 'logs'), help="Path to save log output into")
     parser.add_argument('--video_path', type=str, required=False, default=os.path.join(PARENT_DIRECTORY, 'videos'), help="Path to save video into")
     parser.add_argument('--killswitch_path', type=str, required=False, default=os.path.join(PARENT_DIRECTORY, 'killswitch'), help="Path to a file that if exists, this program will do nothing when ran")
 
