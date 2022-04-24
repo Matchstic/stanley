@@ -119,14 +119,14 @@ class Core:
                 # Takeoff and wait until we hit altitude
 
                 # Confirm vehicle armed before attempting to take off
-                while not self.vehicle.armed and not self.state is ExecutionState.Stop:
+                while not self.vehicle.armed and self.state is ExecutionState.Takeoff:
                     self.vehicle.armed = True
 
                     print('Waiting for arming...')
                     time.sleep(1)
 
-                # If stop happens during the above inner loop
-                if self.state is ExecutionState.Stop: break
+                # If state changes happens during the above inner loop
+                if self.state != ExecutionState.Takeoff: continue
 
                 print('Take off to ' + str(ALTITUDE) + 'm')
                 self.vehicle.simple_takeoff(ALTITUDE)
