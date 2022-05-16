@@ -15,15 +15,31 @@ class FollowRule(BaseRule):
         if detection == None:
             return
 
-        xDistance = detection.x
-        zDistance = detection.z - MINIMUM_DISTANCE
-        heading = 0
+        # Correctly re-project the xDistance etc accounting for minimum distance
 
-        # enforce minimum distance where possible
-        if detection.z < MINIMUM_DISTANCE:
-            heading = self.headingChange(xDistance, MINIMUM_DISTANCE)
+        xDistance = detection.x
+        zDistance = detection.z
+        heading = self.headingChange(xDistance, zDistance)
+
+        hypotenuse = self.findHypotenuse(abs(heading), abs(detection.z)) - MINIMUM_DISTANCE
+
+        if hypotenuse > 0:
+            xDistance = math.sin(math.radians(abs(heading))) * hypotenuse
+            zDistance = math.cos(math.radians(abs(heading))) * hypotenuse
+
+            # Handle direction
+            xDistance = xDistance * (1 if detection.x >= 0 else -1)
+            zDistance = zDistance * (1 if detection.z >= 0 else -1)
+        elif hypotenuse == 0:
+            xDistance = 0
+            zDistance = 0
         else:
-            heading = self.headingChange(xDistance, zDistance)
+            xDistance = math.sin(math.radians(abs(heading))) * hypotenuse
+            zDistance = math.cos(math.radians(abs(heading))) * hypotenuse
+
+            # Handle direction
+            xDistance = xDistance * (1 if detection.x >= 0 else -1)
+            zDistance = zDistance * (1 if detection.z >= 0 else -1)
 
         self._targetPosition = (zDistance, xDistance)
         self._targetYaw = heading
@@ -35,6 +51,9 @@ class FollowRule(BaseRule):
         changeDegrees = math.degrees(changeRadians)
 
         return float((0.0 - changeDegrees) if isLeftward == True else changeDegrees)
+
+    def findHypotenuse(self, angle, zDistance):
+        return math.cos(math.radians(angle)) * zDistance
 
     def reset(self):
         super().reset()

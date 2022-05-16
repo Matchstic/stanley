@@ -1,12 +1,12 @@
 ALTITUDE           = 2    # meters above home position
 ALTITUDE_FUZZINESS = 0.1  # meters around ALTITUDE to allow as error
-MINIMUM_DISTANCE   = 3  # ideal meters away from person
-BACKOFF_DISTANCE   = 2.8    # meters away from person to trigger backoff rule
+MINIMUM_DISTANCE   = 3    # ideal meters away from person
+BACKOFF_DISTANCE   = 2.4  # meters away from person to trigger backoff rule
 HEARTBEAT_TIMEOUT  = 2    # seconds
 YAW_RATE           = 100    # degrees per search loop
 SPEED              = 1.4    # m/s
 DETECTION_THRESH   = 0.65 # Threshold at which a person is considered 'detected'
 MOCK_FOV           = 70   # FOV for the mock camera in tests
 MOCK_Z_MAX         = 10   # Max distance in meters for a detection
-MOCK_FPS           = 25   # Mocked FPS value for detections
+MOCK_FPS           = 60   # Mocked FPS value for detections
 RADIUS_OF_EARTH    = 6378100.0  # in meters (for mock camera)
