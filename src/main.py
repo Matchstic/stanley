@@ -110,30 +110,31 @@ def main(args):
     sys.stdout = LoggerWriter(logger.info)
     sys.stderr = LoggerWriter(logger.error)
 
-    logging.info('Searching for killswitch at: ' + args.killswitch_path)
+    videoEnabled = args.video
+    if args.video:
+        logging.info('Saving videos to: ' + args.video_path)
 
-    if os.path.exists(args.killswitch_path):
-        logging.warning("Killswitch engaged, preventing run")
-        while not EXIT:
-            time.sleep(1)
-    else:
-        videoEnabled = args.video
-        if args.video:
-            logging.info('Saving videos to: ' + args.video_path)
+        if not os.path.exists(args.video_path):
+            logging.warning('Video path ' + args.video_path + ' does not exist, not recording video.')
+            videoEnabled = False
+        else:
+            fileCount = len(os.listdir(args.video_path))
+            videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
 
-            if not os.path.exists(args.video_path):
-                logging.warning('Video path ' + args.video_path + ' does not exist, not recording video.')
-                videoEnabled = False
-            else:
-                fileCount = len(os.listdir(args.video_path))
-                videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
+    logging.info("Connecting to vehicle on: %s" % (args.uri,))
+    vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
 
-        logging.info("Connecting to vehicle on: %s" % (args.uri,))
-        vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
+    if not EXIT:
+        camera = YoloCamera(camera_callback if videoEnabled else None)
+        camera.start()
 
-        if not EXIT:
-            camera = YoloCamera(camera_callback if videoEnabled else None)
-            camera.start()
+        logging.info('Searching for killswitch at: ' + args.killswitch_path)
+        if os.path.exists(args.killswitch_path):
+            logging.warning("Killswitch engaged, preventing core run")
+            while not EXIT:
+                time.sleep(1)
+        else:
+            logging.info("Starting core")
 
             # Setup core thread
             core = Core(vehicle, camera)
