@@ -121,9 +121,6 @@ def main(args):
             fileCount = len(os.listdir(args.video_path))
             videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
 
-    logging.info("Connecting to vehicle on: %s" % (args.uri,))
-    vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
-
     if not EXIT:
         camera = YoloCamera(camera_callback if videoEnabled else None)
         camera.start()
@@ -135,6 +132,8 @@ def main(args):
                 time.sleep(1)
         else:
             logging.info("Starting core")
+            logging.info("Connecting to vehicle on: %s" % (args.uri,))
+            vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
 
             # Setup core thread
             core = Core(vehicle, camera)
