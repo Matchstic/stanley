@@ -26,6 +26,10 @@ def thread(callback, _pipeline, outputFrames):
         counter = 0
         fps = 0
         color = (255, 255, 255)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontSize = 0.4
+        xStart = 8
+        yHeight = 20
 
         print('Camera has started, outputting frames: ' + str(outputFrames))
         RUNNING = True
@@ -68,14 +72,22 @@ def thread(callback, _pipeline, outputFrames):
                         y1 = int(detection.ymin * height)
                         y2 = int(detection.ymax * height)
 
-                        cv2.putText(frame, f"X: {(detection.spatialCoordinates.x / 1000.0):.2f} m", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                        cv2.putText(frame, f"Y: {(detection.spatialCoordinates.y / 1000.0):.2f} m", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-                        cv2.putText(frame, f"Z: {(detection.spatialCoordinates.z / 1000.0):.2f} m", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                        cv2.putText(frame, f"X (m): {(detection.spatialCoordinates.x / 1000.0):.2f}", (xStart, yHeight), font, fontSize, color)
+                        cv2.putText(frame, f"Y (m): {(detection.spatialCoordinates.y / 1000.0):.2f}", (xStart, yHeight*2), font, fontSize, color)
+                        cv2.putText(frame, f"Z (m): {(detection.spatialCoordinates.z / 1000.0):.2f}", (xStart, yHeight*3), font, fontSize, color)
 
                         cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
+                    break # only detect one person at a time
+
             if outputFrames:
-                cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
+                cv2.putText(frame, "NN (fps): {:.2f}".format(fps), (xStart, yHeight*4), font, fontSize, color)
+
+                if len(personDetections) == 0:
+                    cv2.putText(frame, "X (m): 0", (xStart, yHeight), font, fontSize, color)
+                    cv2.putText(frame, "Y (m): 0", (xStart, yHeight*2), font, fontSize, color)
+                    cv2.putText(frame, "Z (m): 0", (xStart, yHeight*3), font, fontSize, color)
+
 
             callback(personDetections, frame if outputFrames else None)
 
