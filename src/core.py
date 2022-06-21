@@ -117,7 +117,7 @@ class Core:
                         self.state = ExecutionState.Takeoff
 
                 else:
-                    time.sleep(0.1)
+                    time.sleep(1)
 
             elif self.state is ExecutionState.Takeoff:
                 print('takeoff mode')

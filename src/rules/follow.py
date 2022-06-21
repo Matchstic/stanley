@@ -45,6 +45,9 @@ class FollowRule(BaseRule):
         self._targetYaw = heading
 
     def headingChange(self, xDistance, zDistance):
+        # Safeguard against weirdness in detection data
+        if zDistance == 0: return 0
+
         isLeftward = xDistance < 0
 
         changeRadians = math.atan(abs(xDistance) / zDistance)

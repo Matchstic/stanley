@@ -25,7 +25,7 @@ def thread(callback, _pipeline, outputFrames):
         startTime = time.monotonic()
         counter = 0
         fps = 0
-        color = (255, 255, 255)
+        color = (0, 0, 0)
         font = cv2.FONT_HERSHEY_SIMPLEX
         fontSize = 0.4
         xStart = 8
@@ -63,6 +63,10 @@ def thread(callback, _pipeline, outputFrames):
             personDetections = []
             for detection in detections:
                 if detection.label == 0:
+                    # Ignore detections with depth closer than the minimum the camera supports
+                    if (detection.spatialCoordinates.z / 1000.0) <= 0.5:
+                        continue
+
                     personDetections.append(Detection(detection.spatialCoordinates.x / 1000.0, detection.spatialCoordinates.y / 1000.0, detection.spatialCoordinates.z / 1000.0, detection.confidence, fps))
 
                     if outputFrames:
