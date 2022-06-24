@@ -75,14 +75,8 @@ def thread(callback, _pipeline, outputFrames):
                         x2 = int(detection.xmax * width)
                         y1 = int(detection.ymin * height)
                         y2 = int(detection.ymax * height)
-
-                        cv2.putText(frame, f"X (m): {(detection.spatialCoordinates.x / 1000.0):.2f}", (xStart, yHeight), font, fontSize, color)
-                        cv2.putText(frame, f"Y (m): {(detection.spatialCoordinates.y / 1000.0):.2f}", (xStart, yHeight*2), font, fontSize, color)
-                        cv2.putText(frame, f"Z (m): {(detection.spatialCoordinates.z / 1000.0):.2f}", (xStart, yHeight*3), font, fontSize, color)
-
+                        
                         cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
-
-                    break # only detect one person at a time
 
             if outputFrames:
                 cv2.putText(frame, "NN (fps): {:.2f}".format(fps), (xStart, yHeight*4), font, fontSize, color)
@@ -91,7 +85,16 @@ def thread(callback, _pipeline, outputFrames):
                     cv2.putText(frame, "X (m): 0", (xStart, yHeight), font, fontSize, color)
                     cv2.putText(frame, "Y (m): 0", (xStart, yHeight*2), font, fontSize, color)
                     cv2.putText(frame, "Z (m): 0", (xStart, yHeight*3), font, fontSize, color)
+                else:
+                    closest = None
 
+                    for detection in personDetections:
+                        if closest == None: closest = detection
+                        elif closest.z > detection.z: closest = detection
+
+                    cv2.putText(frame, f"X (m): {closest.x:.2f}", (xStart, yHeight), font, fontSize, color)
+                    cv2.putText(frame, f"Y (m): {closest.y:.2f}", (xStart, yHeight*2), font, fontSize, color)
+                    cv2.putText(frame, f"Z (m): {closest.z:.2f}", (xStart, yHeight*3), font, fontSize, color)
 
             callback(personDetections, frame if outputFrames else None)
 
@@ -152,7 +155,7 @@ class YoloCamera(BaseCamera):
         self._spatialDetectionNetwork.setConfidenceThreshold(DETECTION_THRESH)
         self._spatialDetectionNetwork.input.setBlocking(False)
         self._spatialDetectionNetwork.setBoundingBoxScaleFactor(0.5)
-        self._spatialDetectionNetwork.setDepthLowerThreshold(100)
+        self._spatialDetectionNetwork.setDepthLowerThreshold(250)
         self._spatialDetectionNetwork.setDepthUpperThreshold(10000)
 
         # Yolo specific parameters
