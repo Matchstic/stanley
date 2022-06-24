@@ -40,6 +40,7 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
     while ui.active():
         # generate json blob of data to send
         vehicleGlobalFrame = vehicle.location.global_relative_frame
+        vehicleLocalFrame = vehicle.location.local_frame
 
         if vehicleGlobalFrame.lat == 0.0 and vehicleGlobalFrame.lon == 0.0:
             time.sleep(0.1)
@@ -53,7 +54,7 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
                     "latitude": vehicleGlobalFrame.lat,
                     "longitude": vehicleGlobalFrame.lon,
                 },
-                "altitude": vehicleGlobalFrame.alt
+                "altitude": "{:.2f}".format(abs(vehicleLocalFrame.down if vehicleLocalFrame.down != None else vehicleGlobalFrame.alt))
             },
             "core": {
                 "state": core.state,

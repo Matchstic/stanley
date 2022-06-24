@@ -1,10 +1,8 @@
 from typing import Tuple
 from pymavlink import mavutil
-from dronekit import Vehicle, VehicleMode
+from dronekit import Vehicle
 from constants import ALTITUDE, SPEED
-import time
 
-LAST_UPDATE = 0
 IS_LOITER = False
 LOITER_POSITION = {
     "latitude": 0,
@@ -12,17 +10,6 @@ LOITER_POSITION = {
 }
 
 def setYaw(vehicle: Vehicle, relativeYaw: float) -> None:
-    global LAST_UPDATE
-
-    # Skip first call if the last update was never
-    if LAST_UPDATE == 0:
-        return
-
-    now = time.time()
-
-    timeDifference = now - LAST_UPDATE
-    headingChange = relativeYaw * timeDifference
-
     msg = vehicle.message_factory.command_long_encode(
         0, 0,    # target system, target component
         mavutil.mavlink.MAV_CMD_CONDITION_YAW,
@@ -36,20 +23,19 @@ def setYaw(vehicle: Vehicle, relativeYaw: float) -> None:
     vehicle.send_mavlink(msg)
 
 def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeYaw: float) -> None:
-    global LAST_UPDATE
     global IS_LOITER
 
     localNorth, localEast = position
-
-    # Find altitude target
-    currentAltitude = vehicle.location.global_relative_frame.alt
-    targetAltOffset = 0 - (ALTITUDE - currentAltitude) # up is negative
 
     if localNorth == 0 and localEast == 0:
         # Loiter in place with guided mode
         setLoiterGuided(vehicle)
     else:
         IS_LOITER = False
+
+        # Find altitude target for NED frame
+        currentAltitude = abs(vehicle.location.local_frame.down)
+        targetAltOffset = 0 - (ALTITUDE - currentAltitude) # up is negative
 
         msg = vehicle.message_factory.set_position_target_local_ned_encode(
             0,       # time_boot_ms (not used)
@@ -64,8 +50,6 @@ def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeY
         vehicle.send_mavlink(msg)
 
     setYaw(vehicle, relativeYaw)
-
-    LAST_UPDATE = time.time()
 
 def setLoiterGuided(vehicle: Vehicle) -> None:
     global IS_LOITER
@@ -84,7 +68,7 @@ def setLoiterGuided(vehicle: Vehicle) -> None:
     msg = vehicle.message_factory.set_position_target_global_int_encode(
         0,       # time_boot_ms (not used)
         0, 0,    # target system, target component
-        mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, # frame
+        mavutil.mavlink.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT, # frame
         0b0000111111111000, # type_mask (only speeds enabled)
         int(LOITER_POSITION["latitude"] * 1e7), # lat_int - X Position in WGS84 frame in 1e7 * meters
         int(LOITER_POSITION["longitude"] * 1e7), # lon_int - Y Position in WGS84 frame in 1e7 * meters

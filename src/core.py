@@ -89,6 +89,7 @@ class Core:
                 self.vehicle.location.global_relative_frame.alt > 0.5 # Indicates we are actually flying
 
     def isAltitudeOk(self) -> bool:
+        # TODO: This does not account for altitude at current position, only from home
         return self.vehicle.location.global_relative_frame.alt >= ALTITUDE - ALTITUDE_FUZZINESS
 
     def isConnected(self) -> bool:
