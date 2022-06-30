@@ -21,6 +21,7 @@ def setYaw(vehicle: Vehicle, relativeYaw: float) -> None:
         0, 0, 0)    # param 5 ~ 7 not used
 
     vehicle.send_mavlink(msg)
+    vehicle.flush()
 
 def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeYaw: float) -> None:
     global IS_LOITER

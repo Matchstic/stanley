@@ -1,6 +1,6 @@
 from .base import BaseRule
 import math
-from constants import MINIMUM_DISTANCE
+from constants import MINIMUM_DISTANCE, YAW_MAX_DAMP
 
 class FollowRule(BaseRule):
     '''
@@ -42,7 +42,10 @@ class FollowRule(BaseRule):
             zDistance = zDistance * (1 if detection.z >= 0 else -1)
 
         self._targetPosition = (zDistance, xDistance)
-        self._targetYaw = heading
+
+        # Apply damping to avoid oscillations
+        yawDamp = ((1.0 - YAW_MAX_DAMP) * math.pow(abs(detection.x), 2)) + YAW_MAX_DAMP if abs(detection.x) <= 1.0 else 1.0
+        self._targetYaw = heading / yawDamp
 
     def headingChange(self, xDistance, zDistance):
         # Safeguard against weirdness in detection data

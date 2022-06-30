@@ -123,7 +123,7 @@ export default class App extends Vue {
   }
 
   private startInputTracking() {
-    const INTERVAL = 100 // ms
+    const INTERVAL = 50 // ms
     const SPEED = 1.5 // m/s
     const MOVE_DISTANCE = SPEED * (INTERVAL / 1000)
     const EARTH = 6378137

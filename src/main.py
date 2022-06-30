@@ -133,7 +133,7 @@ def main(args):
         else:
             logging.info("Starting core")
             logging.info("Connecting to vehicle on: %s" % (args.uri,))
-            vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'])
+            vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'], rate=20)
 
             # Setup core thread
             core = Core(vehicle, camera)

@@ -109,7 +109,7 @@ class MockCamera(BaseCamera):
         vehicleGlobalFrame = self.vehicle.location.global_relative_frame
         vehicleLatitude  = vehicleGlobalFrame.lat
         vehicleLongitude = vehicleGlobalFrame.lon
-        vehicleHeading   = self.vehicle.heading # 0 to 360
+        vehicleHeading   = self.vehicleYaw()
 
         # Get normalised bearing
         newHeading = self.headingBetween(vehicleLatitude, vehicleLongitude, latitude, longitude)
@@ -173,6 +173,16 @@ class MockCamera(BaseCamera):
             bearing = 360 - bearing
 
         return bearing
+
+    def vehicleYaw(self):
+        yaw = math.degrees(self.vehicle.attitude.yaw)
+
+        if yaw > 360:
+            yaw -= 360
+        elif yaw < 0:
+            yaw = 360 + yaw
+
+        return yaw
 
     def distanceBetween(self, lat1, lon1, lat2, lon2):
         lat1 = math.radians(lat1)

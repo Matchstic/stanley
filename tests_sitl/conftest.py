@@ -54,7 +54,7 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
                     "latitude": vehicleGlobalFrame.lat,
                     "longitude": vehicleGlobalFrame.lon,
                 },
-                "altitude": "{:.2f}".format(abs(vehicleLocalFrame.down if vehicleLocalFrame.down != None else vehicleGlobalFrame.alt))
+                "altitude": "{:.2f}".format((0.0 - vehicleLocalFrame.down) if vehicleLocalFrame.down != None else vehicleGlobalFrame.alt)
             },
             "core": {
                 "state": core.state,
@@ -101,7 +101,7 @@ def prepareForTest(timeout = True, verbose=False) -> Tuple[Core, Vehicle, MockCa
 
     print('connecting to ' + connection_string)
 
-    vehicle = connect(connection_string, wait_ready=True)
+    vehicle = connect(connection_string, wait_ready=True, rate=10)
     camera = MockCamera(vehicle)
 
     core = Core(vehicle, camera)
