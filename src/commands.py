@@ -35,10 +35,8 @@ def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeY
         IS_LOITER = False
 
         # Find altitude target for NED frame
-        # currentAltitude = vehicle.location.global_relative_frame.alt
-        # targetAltOffset = 0.0 - (ALTITUDE - currentAltitude) # up is negative
-
-        targetAltOffset = 0
+        currentAltitude = vehicle.location.global_relative_frame.alt
+        targetAltOffset = 0.0 - (ALTITUDE - currentAltitude) # up is negative
 
         msg = vehicle.message_factory.set_position_target_local_ned_encode(
             0,       # time_boot_ms (not used)
