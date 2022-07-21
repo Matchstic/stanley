@@ -25,7 +25,8 @@ class FollowRule(BaseRule):
             yaw = (YAW_RATE / 4.0)
 
         self._targetPosition = (zDistance - MINIMUM_DISTANCE, xDistance)
-        self._targetYaw = yaw
+        #self._targetYaw = yaw
+        self._targetYaw = 0
 
     def headingChange(self, xDistance, zDistance):
         # Safeguard against weirdness in detection data
