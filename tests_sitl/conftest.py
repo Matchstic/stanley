@@ -54,7 +54,7 @@ def ui_thread(ui: UIConnection, core: Core, vehicle: Vehicle, camera: MockCamera
                     "latitude": vehicleGlobalFrame.lat,
                     "longitude": vehicleGlobalFrame.lon,
                 },
-                "altitude": "{:.2f}".format((0.0 - vehicleLocalFrame.down) if vehicleLocalFrame.down != None else vehicleGlobalFrame.alt)
+                "altitude": "{:.2f}".format(vehicleGlobalFrame.alt)
             },
             "core": {
                 "state": core.state,

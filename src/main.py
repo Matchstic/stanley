@@ -141,7 +141,7 @@ def main(args):
             thread.start()
 
             while not EXIT:
-                logging.debug('core state is: ' + core.state)
+                logging.debug('core state is: ' + core.state + ', ' + core.activeRule)
                 time.sleep(1)
 
     # Signal handler will set the value of EXIT

@@ -35,7 +35,7 @@ def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], relativeY
         IS_LOITER = False
 
         # Find altitude target for NED frame
-        currentAltitude = 0.0 - vehicle.location.local_frame.down
+        currentAltitude = vehicle.location.global_relative_frame.alt
         targetAltOffset = 0.0 - (ALTITUDE - currentAltitude) # up is negative
 
         msg = vehicle.message_factory.set_position_target_local_ned_encode(
@@ -69,7 +69,7 @@ def setLoiterGuided(vehicle: Vehicle) -> None:
     msg = vehicle.message_factory.set_position_target_global_int_encode(
         0,       # time_boot_ms (not used)
         0, 0,    # target system, target component
-        mavutil.mavlink.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT, # frame
+        mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, # frame
         0b0000111111111000, # type_mask (only speeds enabled)
         int(LOITER_POSITION["latitude"] * 1e7), # lat_int - X Position in WGS84 frame in 1e7 * meters
         int(LOITER_POSITION["longitude"] * 1e7), # lon_int - Y Position in WGS84 frame in 1e7 * meters
