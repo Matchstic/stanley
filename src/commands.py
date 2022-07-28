@@ -37,7 +37,7 @@ def setPositionTarget(vehicle: Vehicle, position: Tuple[float, float], yawRate: 
         IS_LOITER = False
 
         # Find altitude target for NED frame
-        currentAltitude = 0.0 - vehicle.location.local_frame.down
+        currentAltitude = vehicle.location.global_relative_frame.alt
         targetAltOffset = 0.0 - (ALTITUDE - currentAltitude) # up is negative
 
         ignoreVelocityMask =  0b111000
