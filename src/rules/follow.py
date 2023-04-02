@@ -18,15 +18,16 @@ class FollowRule(BaseRule):
         xDistance = detection.x
         zDistance = detection.z
 
-        yaw = 0
-        if xDistance < -1.0:
-            yaw = -(YAW_RATE / 4.0)
-        if xDistance > 1.0:
-            yaw = (YAW_RATE / 4.0)
+        invertYaw = xDistance < 0
+
+        yawRate = (math.pow(xDistance, 2) / 4.0) * YAW_RATE * (-1 if invertYaw else 1)
+        if yawRate < -YAW_RATE:
+            yawRate = -YAW_RATE
+        if yawRate > YAW_RATE:
+            yawRate = YAW_RATE
 
         self._targetPosition = (zDistance - MINIMUM_DISTANCE, xDistance)
-        #self._targetYaw = yaw
-        self._targetYaw = 0
+        self._targetYaw = yawRate
 
     def headingChange(self, xDistance, zDistance):
         # Safeguard against weirdness in detection data
