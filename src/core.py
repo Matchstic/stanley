@@ -12,6 +12,7 @@ from rules.none import NoDetectionRule
 from rules.search import SearchRule
 from rules.follow import FollowRule
 from rules.backoff import BackoffRule
+from rules.gesture import GestureRule
 
 class ExecutionState(str, Enum):
     Init           = "INIT"
@@ -42,6 +43,7 @@ class Core:
         self.vehicle.add_attribute_listener('last_heartbeat', self.lastHeartbeatCallback)
 
         # Setup rules in heirarchy order
+        self.rules.append(GestureRule(self.vehicle, self.camera))
         self.rules.append(BackoffRule(self.vehicle, self.camera))
         self.rules.append(FollowRule(self.vehicle, self.camera))
         self.rules.append(SearchRule(self.vehicle, self.camera))
@@ -158,7 +160,7 @@ class Core:
                 time.sleep(0.1)
 
             elif self.state is ExecutionState.Running:
-                # Mode and armed callbacks handle exiting this state.
+                # "mode" and "armed" callbacks handle exiting this state.
 
                 # Update each rule with new data
                 for rule in self.rules:
@@ -166,15 +168,18 @@ class Core:
 
                 # Get the highest active rule's output
                 state = ((0.0, 0.0), 0.0)
+                ruleHandlesControl = False
                 for rule in self.rules:
                     if rule.isActive():
                         state = rule.getState()
+                        ruleHandlesControl = rule.ruleHandlesControl()
                         self.activeRule = rule.name()
                         break
 
-                # Apply local translation and yaw differential
-                position, yaw = state
-                setPositionTarget(self.vehicle, position, yaw)
+                # Apply local translation and yaw differential if rule doesn't handle it
+                if not ruleHandlesControl:
+                    position, yaw = state
+                    setPositionTarget(self.vehicle, position, yaw)
 
                 time.sleep(0.01)
 
