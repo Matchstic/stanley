@@ -10,6 +10,7 @@ if platform.machine() == 'aarch64':  # Jetson
 from dronekit import connect, Vehicle
 from core import Core
 from camera.yolocam import YoloCamera
+from camera.preview import PreviewGenerator
 
 import argparse
 import time
@@ -24,8 +25,10 @@ PARENT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pa
 EXIT: bool         = False
 core: Core         = None
 camera: YoloCamera = None
+previewGenerator   = PreviewGenerator()
 vehicle: Vehicle   = None
 videoWriter        = None
+videoEnabled       = False
 
 # See: https://stackoverflow.com/a/66209331
 class LoggerWriter:
@@ -54,9 +57,14 @@ def core_thread(core):
     core.run()
     logging.debug('Stopped core')
 
-def camera_callback(detections, cvFrame):
-    global videoWriter
-    videoWriter.write(cvFrame)
+def camera_callback(detections, cvFrame, metadata):
+    global videoWriter, videoEnabled
+
+    # TODO: Send new frame to gesture system
+
+    if videoEnabled:
+        annotatedPreview = previewGenerator.generate(cvFrame, detections, metadata)
+        videoWriter.write(annotatedPreview)
 
 def stop():
     global EXIT, core, camera, vehicle
@@ -73,7 +81,7 @@ def signal_handler(sig, frame):
     stop()
 
 def main(args):
-    global EXIT, core, camera, vehicle, videoWriter
+    global EXIT, core, camera, vehicle, videoWriter, videoEnabled
 
     thread = None
 
@@ -122,7 +130,7 @@ def main(args):
             videoWriter = cv2.VideoWriter(os.path.join(args.video_path, str(fileCount) + '.mkv'), cv2.VideoWriter_fourcc('M','J','P','G'), 30, YoloCamera.previewSize())
 
     if not EXIT:
-        camera = YoloCamera(camera_callback if videoEnabled else None)
+        camera = YoloCamera(camera_callback)
         camera.start()
 
         logging.info('Searching for killswitch at: ' + args.killswitch_path)

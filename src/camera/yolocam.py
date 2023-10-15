@@ -1,5 +1,6 @@
 from .base import BaseCamera
 from .detection import Detection
+from .metadata import Metadata
 
 from pathlib import Path
 import depthai as dai
@@ -14,7 +15,7 @@ THREAD_STOP = False
 BLOB_PATH   = str((Path(__file__).parent / Path('../../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
 RUNNING     = False
 
-def thread(callback, _pipeline, outputFrames):
+def thread(callback, _pipeline):
     global THREAD_STOP, RUNNING
 
     with dai.Device(_pipeline) as device:
@@ -25,23 +26,15 @@ def thread(callback, _pipeline, outputFrames):
         startTime = time.monotonic()
         counter = 0
         fps = 0
-        color = (0, 0, 0)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        fontSize = 0.4
-        xStart = 8
-        yHeight = 20
 
-        print('Camera has started, outputting frames: ' + str(outputFrames))
+        print('Camera has started')
         RUNNING = True
 
         while THREAD_STOP == False:
             inPreview = previewQueue.get()
             inDet = detectionNNQueue.get()
 
-            frame = None
-
-            if outputFrames:
-                frame = inPreview.getCvFrame()
+            frame = inPreview.getCvFrame()
 
             counter+=1
             current_time = time.monotonic()
@@ -53,13 +46,9 @@ def thread(callback, _pipeline, outputFrames):
             detections = inDet.detections
 
             # If the frame is available, draw bounding boxes on it and show the frame
-            height = 0
-            width = 0
-
-            if outputFrames:
-                height = frame.shape[0]
-                width  = frame.shape[1]
-
+            height = frame.shape[0]
+            width  = frame.shape[1]
+            
             personDetections = []
             for detection in detections:
                 if detection.label == 0:
@@ -67,36 +56,19 @@ def thread(callback, _pipeline, outputFrames):
                     if (detection.spatialCoordinates.z / 1000.0) <= 0.5:
                         continue
 
-                    personDetections.append(Detection(detection.spatialCoordinates.x / 1000.0, detection.spatialCoordinates.y / 1000.0, detection.spatialCoordinates.z / 1000.0, detection.confidence, fps))
+                    personDetections.append(Detection(detection.spatialCoordinates.x / 1000.0, 
+                                                      detection.spatialCoordinates.y / 1000.0, 
+                                                      detection.spatialCoordinates.z / 1000.0, 
+                                                      detection.confidence, 
+                                                      fps,
+                                                      detection.xmin,
+                                                      detection.xmax,
+                                                      detection.ymin,
+                                                      detection.ymax))
+                    
+            metadata = Metadata(width, height, fps)
 
-                    if outputFrames:
-                        # Denormalize bounding box
-                        x1 = int(detection.xmin * width)
-                        x2 = int(detection.xmax * width)
-                        y1 = int(detection.ymin * height)
-                        y2 = int(detection.ymax * height)
-                        
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
-
-            if outputFrames:
-                cv2.putText(frame, "NN (fps): {:.2f}".format(fps), (xStart, yHeight*4), font, fontSize, color)
-
-                if len(personDetections) == 0:
-                    cv2.putText(frame, "X (m): 0", (xStart, yHeight), font, fontSize, color)
-                    cv2.putText(frame, "Y (m): 0", (xStart, yHeight*2), font, fontSize, color)
-                    cv2.putText(frame, "Z (m): 0", (xStart, yHeight*3), font, fontSize, color)
-                else:
-                    closest = None
-
-                    for detection in personDetections:
-                        if closest == None: closest = detection
-                        elif closest.z > detection.z: closest = detection
-
-                    cv2.putText(frame, f"X (m): {closest.x:.2f}", (xStart, yHeight), font, fontSize, color)
-                    cv2.putText(frame, f"Y (m): {closest.y:.2f}", (xStart, yHeight*2), font, fontSize, color)
-                    cv2.putText(frame, f"Z (m): {closest.z:.2f}", (xStart, yHeight*3), font, fontSize, color)
-
-            callback(personDetections, frame if outputFrames else None)
+            callback(personDetections, frame, metadata)
 
         RUNNING = False
 
@@ -181,7 +153,7 @@ class YoloCamera(BaseCamera):
         return RUNNING
 
     def start(self):
-        self._thread = threading.Thread(target=thread, args=(self._callback, self._pipeline, self._userCallback != None))
+        self._thread = threading.Thread(target=thread, args=(self._callback, self._pipeline))
         self._thread.start()
 
     def stop(self):
