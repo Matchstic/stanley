@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Environment="HOME=/home/<username>/"
-ExecStart=/usr/local/bin/python3.9 main.py --uri 127.0.0.1:14550 --video --video_path <path-to-videos-folder> --killswitch_path <path-to-killswitch-file> --log_path <path-to-logs-folder>
+ExecStart=/usr/local/bin/python3.9 main.py --uri /dev/ttyTHS1 --video --video_path <path-to-videos-folder> --killswitch_path <path-to-killswitch-file> --log_path <path-to-logs-folder>
 Restart=on-failure
 WorkingDirectory=<path-to-cloned-repo>/src/
 StandardOutput=inherit

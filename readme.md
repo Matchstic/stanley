@@ -90,7 +90,7 @@ cd ~
 git clone https://github.com/Matchstic/stanley.git
 ```
 
-If you're using MAVProxy already on the system, make sure to start it with `--out 127.0.0.1:14550`. Then, you can run `python3.9 src/main.py --uri 127.0.0.1:14550`
+If you're using MAVProxy already on the system, make sure to start it with `--out 127.0.0.1:14550`. Then, you can run `python3.9 src/main.py --uri 127.0.0.1:14550`. If not, connect directly to the serial port with e.g. `python3.9 src/main.py --uri /dev/ttyTHS1`
 
 **OPTIONAL**
 
