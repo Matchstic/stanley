@@ -12,7 +12,7 @@ import threading
 from constants import DETECTION_THRESH
 
 THREAD_STOP = False
-BLOB_PATH   = str((Path(__file__).parent / Path('../../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+BLOB_PATH   = str((Path(__file__).parent / Path('../../models/yolo-v4-tiny.blob')).resolve().absolute())
 RUNNING     = False
 
 def thread(callback, _pipeline):
