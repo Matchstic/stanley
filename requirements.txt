@@ -1,0 +1,13 @@
+# stanley requirements
+# Example: pip install -r requirements.txt
+
+# base
+dronekit>=2.9.2
+pymavlink>=2.4.40
+depthai-sdk>=1.13.1
+
+# visualiser / SITL / testing
+gpxpy>=1.6.1
+dronekit-sitl>=3.3.0
+pytest>=7.4.3
+websockets>=12.0

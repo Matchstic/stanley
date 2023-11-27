@@ -154,3 +154,5 @@ working/
 videos/
 terrain/
 eeprom.bin
+yolov8/
+.DS_Store
