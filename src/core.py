@@ -5,7 +5,9 @@ from constants import ALTITUDE, HEARTBEAT_TIMEOUT, ALTITUDE_FUZZINESS
 
 from commands import setPositionTarget
 from dronekit import Vehicle, VehicleMode
+
 from camera.base import BaseCamera
+from gestures.manager import GestureManager
 
 from rules.base import BaseRule
 from rules.none import NoDetectionRule
@@ -28,14 +30,17 @@ class Core:
 
     vehicle: Vehicle = None
     camera: BaseCamera = None
+    gestureManager: GestureManager = None
+
     state: ExecutionState = ExecutionState.Init
     rules: list[BaseRule] = []
 
     activeRule = 'n/a'
 
-    def __init__(self, vehicle: Vehicle, camera: BaseCamera):
+    def __init__(self, vehicle: Vehicle, camera: BaseCamera, gestureManager: GestureManager):
         self.camera = camera
         self.vehicle = vehicle
+        self.gestureManager = gestureManager
 
         # Setup vehicle etc
         self.vehicle.add_attribute_listener('mode', self.modeCallback)
@@ -43,7 +48,7 @@ class Core:
         self.vehicle.add_attribute_listener('last_heartbeat', self.lastHeartbeatCallback)
 
         # Setup rules in heirarchy order
-        self.rules.append(GestureRule(self.vehicle, self.camera))
+        self.rules.append(GestureRule(self.vehicle, self.camera, self.gestureManager))
         self.rules.append(BackoffRule(self.vehicle, self.camera))
         self.rules.append(FollowRule(self.vehicle, self.camera))
         self.rules.append(SearchRule(self.vehicle, self.camera))

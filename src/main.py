@@ -4,13 +4,15 @@ if sys.version_info[0] < 3:
 
 import platform
 import os
-if platform.machine() == 'aarch64':  # Jetson
+if platform.machine() == 'aarch64':
     os.environ['OPENBLAS_CORETYPE'] = "ARMV8"
 
 from dronekit import connect, Vehicle
 from core import Core
 from camera.yolocam import YoloCamera
 from camera.preview import PreviewGenerator
+
+from gestures.manager import GestureManager
 
 import argparse
 import time
@@ -29,6 +31,9 @@ previewGenerator   = PreviewGenerator()
 vehicle: Vehicle   = None
 videoWriter        = None
 videoEnabled       = False
+
+gesturesEnabled    = True
+gestureManager     = GestureManager()
 
 # See: https://stackoverflow.com/a/66209331
 class LoggerWriter:
@@ -58,9 +63,10 @@ def core_thread(core):
     logging.debug('Stopped core')
 
 def camera_callback(detections, cvFrame, metadata):
-    global videoWriter, videoEnabled
+    global videoWriter, videoEnabled, gesturesEnabled, gestureManager
 
-    # TODO: Send new frame to gesture system
+    if gesturesEnabled:
+        gestureManager.onNewFrame(cvFrame)
 
     if videoEnabled:
         annotatedPreview = previewGenerator.generate(cvFrame, detections, metadata)
@@ -81,7 +87,7 @@ def signal_handler(sig, frame):
     stop()
 
 def main(args):
-    global EXIT, core, camera, vehicle, videoWriter, videoEnabled
+    global EXIT, core, camera, vehicle, videoWriter, videoEnabled, gesturesEnabled, gestureManager
 
     thread = None
 
@@ -118,6 +124,10 @@ def main(args):
     sys.stdout = LoggerWriter(logger.info)
     sys.stderr = LoggerWriter(logger.error)
 
+    gesturesEnabled = args.nogestures != True
+    if gesturesEnabled:
+        gestureManager.start()
+
     videoEnabled = args.video
     if args.video:
         logging.info('Saving videos to: ' + args.video_path)
@@ -144,7 +154,7 @@ def main(args):
             vehicle = connect(args.uri, wait_ready=['gps_0', 'armed', 'mode', 'attitude'], rate=20)
 
             # Setup core thread
-            core = Core(vehicle, camera)
+            core = Core(vehicle, camera, gestureManager)
             thread = threading.Thread(target=core_thread, args=(core,))
             thread.start()
 
@@ -160,6 +170,9 @@ def main(args):
     if videoWriter:
         videoWriter.release()
 
+    if gesturesEnabled:
+        gestureManager.shutdown()
+
     logging.info('Thank you for flying Matchstic Air. We wish you a pleasant onward journey.')
 
 if __name__ == '__main__':
@@ -170,6 +183,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_path', type=str, required=False, default=os.path.join(PARENT_DIRECTORY, 'logs'), help="Path to save log output into")
     parser.add_argument('--video_path', type=str, required=False, default=os.path.join(PARENT_DIRECTORY, 'videos'), help="Path to save video into")
     parser.add_argument('--killswitch_path', type=str, required=False, default=os.path.join(PARENT_DIRECTORY, 'killswitch'), help="Path to a file that if exists, this program will do nothing when ran")
+    parser.add_argument('--nogestures', required=False, default=False, help="Disable gesture recognition", action='store_true')
 
     args = parser.parse_args()
 

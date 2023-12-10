@@ -1,11 +1,16 @@
 from .base import BaseRule
+from ..gestures.manager import GestureManager
 
 class GestureRule(BaseRule):
     '''
     Rule to run gesture-based command if observed by underlying system
     '''
 
-    _runningGestureThread = None
+    gestureManager: GestureManager = None
+
+    def __init__(self, vehicle, camera, gestureManager: GestureManager):
+        BaseRule.__init__(self, vehicle, camera)
+        self.gestureManager = gestureManager
 
     def isActive(self):
         return False
